@@ -1,0 +1,1 @@
+@ stdcall WlanWizOpen (ptr ptr ptr long)

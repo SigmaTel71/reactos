@@ -1,0 +1,58 @@
+/*
+ * PROJECT:     ReactOS Shell
+ * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
+ * PURPOSE:     English (United States) resource file
+ * TRANSLATOR:  Copyright 2024 Vitaly Orekhov <vkvo2000@vivaldi.net>
+ */
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+IDD_WLANWIZ_DIALOG DIALOGEX 0, 0, 436, 290
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU
+CAPTION "Wireless Network Connection"
+FONT 8, "MS Shell Dlg"
+BEGIN
+   GROUPBOX "Network Tasks", IDC_WLANWIZ_MAINGROUP, 2, 8, 121, 71, BS_GROUPBOX | WS_GROUP, WS_EX_TRANSPARENT
+   PUSHBUTTON "Refresh networks list", IDC_WLANWIZ_SCAN_NETWORKS, 5, 28, 115, 20, BS_OWNERDRAW | BS_PUSHBUTTON | WS_TABSTOP
+   PUSHBUTTON "Set up a wireless network", IDC_WLANWIZ_INSTALL_WLAN, 5, 53, 115, 20, BS_OWNERDRAW | BS_PUSHBUTTON | WS_TABSTOP
+   GROUPBOX "Related Tasks", IDC_WLANWIZ_RELATEDGROUP, 2, 82, 121, 71, BS_GROUPBOX | WS_GROUP,  WS_EX_TRANSPARENT
+   PUSHBUTTON "Change the order of preferred networks", IDC_WLANWIZ_PREFERRED_APS, 5, 99, 115, 20, BS_OWNERDRAW | BS_PUSHBUTTON | WS_TABSTOP
+   PUSHBUTTON "Change advanced settings", IDC_WLANWIZ_ADVANCED_SETTINGS, 5, 124, 115, 20, BS_OWNERDRAW | BS_PUSHBUTTON | WS_TABSTOP
+   LTEXT "", IDC_WLANWIZ_ETCHEDVERT, 125, 0, 0, 292, SS_ETCHEDVERT | WS_GROUP
+   LTEXT "Choose a wireless network", IDD_WLANWIZ_CHOOSE_NET_TITLE, 131, 6, 278, 19 
+   LTEXT "Click an item in the list below to connect to a &wireless network in range or to get more information.", IDD_WLANWIZ_CHOOSE_NET_SUBTITLE, 131, 32, 293, 17 
+   LISTBOX IDC_WLANWIZ_LISTBOX, 131, 50, 298, 211, LBS_NOTIFY | LBS_OWNERDRAWVARIABLE | LBS_HASSTRINGS | LBS_USETABSTOPS | LBS_WANTKEYBOARDINPUT | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | WS_TABSTOP 
+   PUSHBUTTON "Co&nnect", IDC_WLANWIZ_MAINBUTTON, 377, 268, 52, 14
+END
+
+STRINGTABLE
+BEGIN
+    IDS_DLGCLASS                    "Wireless Network Connection"
+    IDS_WLANWIZ_CONNECT             "&Connect"
+    IDS_WLANWIZ_DISCONNECT          "&Disconnect"
+    IDS_WLANWIZ_CLOSE               "C&lose"
+    
+    /* Listbox related strings */
+    IDS_WLANWIZ_CONNECTED           "Connected"
+    IDS_WLANWIZ_DISCONNECTED        "Disconnected"
+    IDS_WLANWIZ_CONNECTED_AUTO      "automatically"
+    IDS_WLANWIZ_CONNECTED_MANU      "manually"
+    IDS_WLANWIZ_ENCRYPTED_AP        "Secured wireless network"
+    IDS_WLANWIZ_UNENCRYPTED_AP      "Unsecured wireless network"
+    IDS_WLANWIZ_ENCRYPTED_IBSS      "Secured 'computer-to-computer' network"
+    IDS_WLANWIZ_UNENCRYPTED_IBSS    "Unsecured 'computer-to-computer' network"
+    IDS_WLANWIZ_NO_APS_DISCOVERED   "No wireless networks were found in range\n\nMake sure the wireless switch on your computer is on.\nTo retry scanning, click 'Refresh network list.'"
+    IDS_WLANWIZ_SCANNING_NETWORKS   "Searching for wireless networks in range..."
+    IDS_WLANWIZ_HIDDEN_NETWORK      "Hidden network"
+
+    IDS_WLANWIZ_EXPAND_UNENCRYPTED        "This network is configured for open access and information sent over may be visible to others. If you want to connect to this network, click Connect."
+    IDS_WLANWIZ_EXPAND_ENCRYPTED          "To connect to this network, click Connect and follow further instructions."
+    IDS_WLANWIZ_EXPAND_ENCRYPTED_OBSOLETE "This network uses and older security standard that might not provide sufficient protection for information sent over. If you want to connect to this network, click Connect."
+    IDS_WLANWIZ_EXPAND_CONNECTED          "You are currently connected to this network. To disconnect from this network, click Disconnect."
+
+    /* Sidebar button tooltips */
+    IDS_WLANWIZ_SCAN_NETWORKS_TT        "Search for wireless networks"
+    IDS_WLANWIZ_INSTALL_WLAN_TT         "Start a wizard to setup your wireless network"
+    IDS_WLANWIZ_PREFERRED_APS_TT        "Open the list of preferred networks to perform changes"
+    IDS_WLANWIZ_ADVANCED_SETTINGS_TT    "Change advanced settings to make adapter connect to wireless network"
+END

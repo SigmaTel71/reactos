@@ -1,0 +1,129 @@
+#include <winres.h>
+
+#include "resource.h"
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+
+#define REACTOS_STR_FILE_DESCRIPTION  "Wizard for Wireless Network Connections"
+#define REACTOS_STR_INTERNAL_NAME     "wlanwiz"
+#define REACTOS_STR_ORIGINAL_FILENAME "wlanwiz.dll"
+#include <reactos/version.rc>
+
+IDI_MAINICON ICON "res/wlanwiz.ico"
+
+IDI_WLANICON ICON "res/wlanicon.ico"
+IDI_WLANICON_20 ICON "res/wlanicon_20.ico"
+IDI_WLANICON_40 ICON "res/wlanicon_40.ico"
+IDI_WLANICON_60 ICON "res/wlanicon_60.ico"
+IDI_WLANICON_80 ICON "res/wlanicon_80.ico"
+IDI_WLANICON_100 ICON "res/wlanicon_100.ico"
+
+IDI_WLANICON_RX ICON "res/rx.ico"
+IDI_WLANICON_TX ICON "res/tx.ico"
+IDI_AP_AVAILABLE ICON "res/ap_avail.ico"
+IDI_AP_UNAVAILABLE ICON "res/ap_unavail.ico"
+IDI_AP_CONNECTING ICON "res/ap_conn.ico"
+IDI_AP_DHCP_FAILED ICON "res/dhcp_fail.ico"
+
+IDI_BSS_INFRA ICON "res/bss_infra.ico"
+IDI_BSS_ADHOC ICON "res/bss_adhoc.ico"
+
+IDI_WLANWIZ_SCAN_NETWORKS ICON "res/refresh.ico"
+IDI_WLANWIZ_INSTALL_WLAN ICON "res/wlanwiz.ico"
+IDI_WLANWIZ_ADVANCED_SETTINGS ICON "res/advanced_settings.ico"
+
+#include <reactos/manifest_hosted.rc>
+
+/* UTF-8 */
+#pragma code_page(65001)
+
+/*
+#ifdef LANGUAGE_BG_BG
+    #include "lang/bg-BG.rc"
+#endif
+#ifdef LANGUAGE_CS_CZ
+    #include "lang/cs-CZ.rc"
+#endif
+#ifdef LANGUAGE_DA_DK
+    #include "lang/da-DK.rc"
+#endif
+#ifdef LANGUAGE_DE_DE
+    #include "lang/de-DE.rc"
+#endif
+#ifdef LANGUAGE_EL_GR
+    #include "lang/el-GR.rc"
+#endif
+*/
+#ifdef LANGUAGE_EN_US
+    #include "lang/en-US.rc"
+#endif
+/*
+#ifdef LANGUAGE_ES_ES
+    #include "lang/es-ES.rc"
+#endif
+#ifdef LANGUAGE_FR_FR
+    #include "lang/fr-FR.rc"
+#endif
+#ifdef LANGUAGE_HE_IL
+    #include "lang/he-IL.rc"
+#endif
+#ifdef LANGUAGE_HI_IN
+    #include "lang/hi-IN.rc"
+#endif
+#ifdef LANGUAGE_HU_HU
+    #include "lang/hu-HU.rc"
+#endif
+#ifdef LANGUAGE_ID_ID
+    #include "lang/id-ID.rc"
+#endif
+#ifdef LANGUAGE_IT_IT
+    #include "lang/it-IT.rc"
+#endif
+#ifdef LANGUAGE_JA_JP
+    #include "lang/ja-JP.rc"
+#endif
+#ifdef LANGUAGE_NL_NL
+    #include "lang/nl-NL.rc"
+#endif
+#ifdef LANGUAGE_NB_NO
+    #include "lang/no-NO.rc"
+#endif
+#ifdef LANGUAGE_PL_PL
+    #include "lang/pl-PL.rc"
+#endif
+#ifdef LANGUAGE_PT_PT
+    #include "lang/pt-PT.rc"
+#endif
+#ifdef LANGUAGE_RO_RO
+    #include "lang/ro-RO.rc"
+#endif
+*/
+#ifdef LANGUAGE_RU_RU
+    #include "lang/ru-RU.rc"
+#endif
+/*
+#ifdef LANGUAGE_SK_SK
+    #include "lang/sk-SK.rc"
+#endif
+#ifdef LANGUAGE_SQ_AL
+    #include "lang/sq-AL.rc"
+#endif
+#ifdef LANGUAGE_SV_SE
+    #include "lang/sv-SE.rc"
+#endif
+#ifdef LANGUAGE_TR_TR
+    #include "lang/tr-TR.rc"
+#endif
+#ifdef LANGUAGE_UK_UA
+    #include "lang/uk-UA.rc"
+#endif
+#ifdef LANGUAGE_ZH_CN
+    #include "lang/zh-CN.rc"
+#endif
+#ifdef LANGUAGE_ZH_HK
+    #include "lang/zh-HK.rc"
+#endif
+#ifdef LANGUAGE_ZH_TW
+    #include "lang/zh-TW.rc"
+#endif
+*/
