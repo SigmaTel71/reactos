@@ -1,0 +1,28 @@
+
+project(SHELL)
+
+remove_definitions(-D_WIN32_WINNT=0x502)
+add_definitions(-D_WIN32_WINNT=0x600)
+spec2def(wlanwiz.dll wlanwiz.spec ADD_IMPORTLIB)
+
+list(APPEND SOURCE
+    wlanwiz.cpp
+    wlanwiz_advsettings.cpp
+    wlanwiz_draw.cpp
+    wlanwiz_keyb.cpp
+    wlanwiz_scan.cpp
+    wlanwiz_subclassproc_lb.cpp
+    wlanwiz_subclassproc_btngb.cpp)
+
+file(GLOB wlanwiz_rc_deps res/*.*)
+add_rc_deps(wlanwiz.rc ${wlanwiz_rc_deps})
+
+add_library(wlanwiz MODULE
+    ${SOURCE}
+    ${CMAKE_CURRENT_BINARY_DIR}/wlanwiz.def
+    wlanwiz.rc)
+
+set_module_type(wlanwiz win32dll UNICODE)
+target_link_libraries(wlanwiz cpprt cppstl uuid atl_classes)
+add_importlibs(wlanwiz version gdi32 user32 advapi32 comctl32 ole32 msvcrt msimg32 kernel32 ntdll uxtheme wlanapi)
+add_cd_file(TARGET wlanwiz DESTINATION reactos/system32 FOR all)
