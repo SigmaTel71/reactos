@@ -1,3 +1,10 @@
+/*
+ * PROJECT:     ReactOS Shell
+ * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
+ * PURPOSE:     ReactOS Wizard for Wireless Network Connections (WLAN Advanced Settings)
+ * COPYRIGHT:   Copyright 2024 Vitaly Orekhov <vkvo2000@vivaldi.net>
+ */
+
 #include "main.h"
 
 typedef void (CALLBACK NCFREENETCONPROPERTIES)(NETCON_PROPERTIES* pProps);
@@ -17,6 +24,20 @@ PropSheetProc(HWND hwndDlg, UINT uMsg, LPARAM lParam)
 	return FALSE;
 }
 
+BOOL
+CALLBACK
+PropSheetExCallback(HPROPSHEETPAGE hPage, LPARAM lParam)
+{
+	PROPSHEETHEADERW* pinfo = (PROPSHEETHEADERW*)lParam;
+
+	if (pinfo->nPages < MAX_PROPERTY_SHEET_PAGE)
+	{
+		pinfo->phpage[pinfo->nPages++] = hPage;
+		return TRUE;
+	}
+	return FALSE;
+}
+
 LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
 {
 	IEnumNetConnection* pEnum = NULL;
@@ -29,8 +50,7 @@ LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl
 	HRESULT hr = S_OK;
 	ULONG ulCount = 0;
 
-    hr = CNetConnectionManager_CreateInstance(IID_PPV_ARG(INetConnectionManager, &pNetCM));
-	//hr = CoCreateInstance(CLSID_ConnectionManager, NULL, CLSCTX_ALL, IID_INetConnectionManager, reinterpret_cast<LPVOID*>(&pNetCM));
+	hr = CoCreateInstance(CLSID_ConnectionManager, NULL, CLSCTX_ALL, IID_INetConnectionManager, reinterpret_cast<LPVOID*>(&pNetCM));
 
 	if (FAILED(hr))
 		return FALSE;
@@ -51,6 +71,7 @@ LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl
 
 		if (IsEqualGUID(pNetProps->guidId, gWlanAdapter))
 			break;
+
 	}
 
 	/* Open property sheet for our WLAN adapter */
@@ -58,7 +79,7 @@ LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl
 
 	if (FAILED(hr))
 		return FALSE;
-
+	
 	hr = CoCreateInstance(clsid, NULL, CLSCTX_INPROC_SERVER, IID_INetConnectionPropertyUi, reinterpret_cast<LPVOID*>(&pNetCCPui));
 
 	if (FAILED(hr))
@@ -95,19 +116,5 @@ LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl
 	NCFREENETCONPROPERTIES* NcFreeNetconProperties = (NCFREENETCONPROPERTIES*)GetProcAddress(hmnetshell, "NcFreeNetconProperties");
 	NcFreeNetconProperties(pNetProps);
 
-	return FALSE;
-}
-
-BOOL
-CALLBACK
-PropSheetExCallback(HPROPSHEETPAGE hPage, LPARAM lParam)
-{
-	PROPSHEETHEADERW* pinfo = (PROPSHEETHEADERW*)lParam;
-
-	if (pinfo->nPages < MAX_PROPERTY_SHEET_PAGE)
-	{
-		pinfo->phpage[pinfo->nPages++] = hPage;
-		return TRUE;
-	}
 	return FALSE;
 }
