@@ -1,0 +1,222 @@
+/*
+ * PROJECT:     ReactOS Shell
+ * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
+ * PURPOSE:     ReactOS Wizard for Wireless Network Connections
+ * COPYRIGHT:   Copyright 2024-2025 Vitaly Orekhov <vkvo2000@vivaldi.net>
+ */
+#pragma once
+#include <set>
+
+#include <atlbase.h>
+#include <atlcoll.h>
+#include <atlconv.h>
+#include <atlstr.h>
+#include <atlwin.h>
+#include <strsafe.h>
+#include <shlobj.h>
+#include <shlwapi.h>
+#include <wlanapi.h>
+#include <vssym32.h>
+#ifdef __REACTOS__
+#include <atlsimpcoll.h>
+#include <cguid.h>
+#include <shellapi.h>
+#include <shlguid_undoc.h>
+#include <windef.h>
+#include <winbase.h>
+#include <winuser.h>
+#include <wingdi.h>
+#include <wine/debug.h>
+#endif
+#include <uxtheme.h>
+
+#include "resource.h"
+
+#define IDT_SCANNING_NETWORKS 700
+#define IDI_SHELL32_FAVORITES 44
+#define IDI_SHELL32_LOCK      48
+
+enum WLAN_SCAN_STATES
+{
+    STATUS_SCAN_COMPLETE,
+    STATUS_SCANNING,
+};
+
+static struct ExplorerInstance : public IUnknown
+{
+    HWND m_hWnd;
+    volatile LONG m_rc;
+
+    ExplorerInstance() : m_hWnd(NULL), m_rc(1) {}
+    virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv)
+    {
+        const QITAB rgqit[] = { { 0 } };
+        return QISearch(this, rgqit, riid, ppv);
+    }
+    virtual ULONG STDMETHODCALLTYPE AddRef()
+    {
+        return InterlockedIncrement(&m_rc);
+    }
+    virtual ULONG STDMETHODCALLTYPE Release()
+    {
+        ULONG r = InterlockedDecrement(&m_rc);
+        if (!r)
+            PostMessageW(m_hWnd, WM_CLOSE, 0, 0);
+        return r;
+    }
+    void Wait()
+    {
+        SHSetInstanceExplorer(NULL);
+        m_hWnd = CreateWindowExW(WS_EX_TOOLWINDOW, L"STATIC", NULL, WS_POPUP,
+            0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
+        BOOL loop = InterlockedDecrement(&m_rc) != 0;
+        MSG msg;
+        while (loop && (int)GetMessageW(&msg, NULL, 0, 0) > 0)
+        {
+            if (msg.hwnd == m_hWnd && msg.message == WM_CLOSE)
+                PostMessageW(m_hWnd, WM_QUIT, 0, 0);
+            DispatchMessageW(&msg);
+        }
+    }
+} g_EI;
+
+class CWlanWizard : public CDialogImpl<CWlanWizard>
+{
+public:
+    enum { IDD = IDD_WLANWIZ_DIALOG };
+
+    CContainedWindow m_SidebarButtonSN;
+    CContainedWindow m_SidebarButtonIW;
+    CContainedWindow m_SidebarButtonPA;
+    CContainedWindow m_SidebarButtonAS;
+    CContainedWindow m_ListboxWLAN;
+    CContainedWindow m_ConnectButton;
+
+    CContainedWindow m_SidebarGroupMain;
+    CContainedWindow m_SidebarGroupRelated;
+    
+    CWlanWizard() :
+        m_SidebarButtonSN(L"BUTTON", this, 1),
+        m_SidebarButtonIW(L"BUTTON", this, 1),
+        m_SidebarButtonPA(L"BUTTON", this, 1),
+        m_SidebarButtonAS(L"BUTTON", this, 1),
+        m_ListboxWLAN(L"LISTBOX", this, 2),
+        m_ConnectButton(L"BUTTON", this, 3),
+        m_SidebarGroupMain(L"BUTTON", this, 4),
+        m_SidebarGroupRelated(L"BUTTON", this, 4) {};
+
+    BEGIN_MSG_MAP(CWlanWizard)
+        MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog);
+        MESSAGE_HANDLER(WM_DRAWITEM, OnDrawItem);
+        MESSAGE_HANDLER(WM_CLOSE, OnClose);
+        MESSAGE_HANDLER(WM_MOUSEMOVE, OnMouseMoveMain);
+        MESSAGE_HANDLER(WM_MEASUREITEM, OnMeasureItem);
+        MESSAGE_HANDLER(WM_PAINT, OnPaint);
+        MESSAGE_HANDLER(WM_SETCURSOR, OnSetCursor);
+        MESSAGE_HANDLER(WM_TIMER, OnTimer);
+        MESSAGE_HANDLER(WM_THEMECHANGED, OnThemeChanged);
+        MESSAGE_HANDLER(WM_VKEYTOITEM, OnVKeyToItem);
+        COMMAND_ID_HANDLER(IDC_WLANWIZ_SCAN_NETWORKS, OnScanNetworks);
+        COMMAND_ID_HANDLER(IDC_WLANWIZ_ADVANCED_SETTINGS, OnAdvancedSettings);
+        COMMAND_ID_HANDLER(IDC_WLANWIZ_LISTBOX, OnListBox);
+        COMMAND_ID_HANDLER(IDC_WLANWIZ_MAINBUTTON, OnMainButton);
+
+    ALT_MSG_MAP(1)
+        MESSAGE_HANDLER(WM_GETDLGCODE, OnGetDlgCode);
+        MESSAGE_HANDLER(WM_KEYDOWN, OnKeyDown);
+        MESSAGE_HANDLER(WM_MOUSEMOVE, OnMouseMove);
+        MESSAGE_HANDLER(WM_ERASEBKGND, OnEraseBkgndGroupBoxBtns);
+
+    ALT_MSG_MAP(2)
+        MESSAGE_HANDLER(WM_GETDLGCODE, OnGetDlgCodeLB);
+        MESSAGE_HANDLER(WM_PAINT, OnPaintLB);
+        MESSAGE_HANDLER(WM_LBUTTONDOWN, OnLButtonDownLB);
+
+    ALT_MSG_MAP(3)
+        MESSAGE_HANDLER(WM_GETDLGCODE, OnGetDlgCode);
+        MESSAGE_HANDLER(WM_KEYDOWN, OnKeyDown);
+
+    ALT_MSG_MAP(4)
+        MESSAGE_HANDLER(WM_ERASEBKGND, OnEraseBkgndGroupBoxBtns);
+        MESSAGE_HANDLER(WM_PAINT, OnPaintGroupBox);
+
+    END_MSG_MAP()
+
+    HINSTANCE wlanwiz_hInstance = NULL;
+    HANDLE hMutex = INVALID_HANDLE_VALUE;
+    BOOL FindWlanDevice(ATL::CString wsGUID = L"");
+    void PreCloseCleanup();
+
+private:
+    BOOL m_bScanTimeout = TRUE;
+    BOOL m_bMouseOverButtons = FALSE;
+    DWORD m_dwNegotiatedVersion = 0;
+    HANDLE m_hProcessHeap = GetProcessHeap();
+    HANDLE m_hWlanClient = INVALID_HANDLE_VALUE;
+    HANDLE m_hScanThread = INVALID_HANDLE_VALUE;
+    /* We can't have one HTHEME to rule them all. */
+    HTHEME m_hThemeEB = NULL;
+    HTHEME m_hThemeButton = NULL;
+    LPOLESTR m_sGUID = NULL;
+    PWLAN_INTERFACE_INFO_LIST m_lstWlanInterfaces = NULL;
+    PWLAN_AVAILABLE_NETWORK_LIST m_lstWlanNetworks = NULL;
+    UINT m_uScanStatus = STATUS_SCAN_COMPLETE;
+    
+    /* Sidebar button specific variables */
+    LOGFONT m_lfCaption = { 0 };
+    ATL::CSimpleMap<DWORD, HICON> m_MSidebarBtns;
+    ATL::CSimpleMap<DWORD, HICON> m_MListboxIcons;
+    ATL::CWindow m_cPrevWnd;
+    WPARAM m_wPrevCtlID = 0;
+
+    /* Listbox specific variables */
+    DWORD m_dwSelectedItemID = 0;
+
+    LRESULT OnInitDialog(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnClose(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnMouseMoveMain(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnMeasureItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnPaint(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnSetCursor(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnTimer(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnThemeChanged(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    
+    /* Control callbacks */
+    LRESULT OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
+    LRESULT OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
+    LRESULT OnListBox(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
+    LRESULT OnMainButton(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
+    
+    /* ALT_MSG_MAP 1 */
+    LRESULT OnEraseBkgndGroupBoxBtns(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnGetDlgCode(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnKeyDown(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnMouseMove(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    
+    /* ALT_MSG_MAP 2 */
+    LRESULT OnGetDlgCodeLB(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnVKeyToItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnPaintLB(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnLButtonDownLB(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+
+    /* ALT_MSG_MAP 4 */
+    LRESULT OnPaintGroupBox(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+
+    /* Helper functions */
+    HWND CreateToolTip(_In_ int toolID);
+    static DWORD WINAPI ScanNetworksThread(_In_ LPVOID lpParameter);
+    static ATL::CStringW APNameToUnicode(_In_ PDOT11_SSID dot11Ssid);
+    static ATL::CComPtr<IStream> CreateDataStream(const PVOID pvData, size_t size);
+    void TryInsertToAdHoc(_Inout_ std::set<DWORD>& setAdHoc, _In_ DWORD dwIndex);
+    void TryInsertToKnown(_Inout_ std::set<DWORD>& setProfiles, _In_ DWORD dwIndex);
+    void PreloadDrawableItems();
+    void UnloadDrawableItems();
+    void AutoconnectCheckboxCollision(_Inout_ LPRECT rcItem);
+    const bool PreferAutoConnection(_In_ PWLAN_AVAILABLE_NETWORK wlanNetwork);
+    DWORD TryFindConnected(_In_ DWORD dwIndex);
+
+    /* Isolated WM_DRAWITEM handlers */
+    void OnSidebarBtnDrawItem(_In_ UINT CtlID, _In_ PDRAWITEMSTRUCT pdis);
+    void OnListboxDrawItem(_In_ UINT CtlID, _In_ PDRAWITEMSTRUCT pdis);
+};
