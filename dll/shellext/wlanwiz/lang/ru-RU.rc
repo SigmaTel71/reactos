@@ -1,0 +1,58 @@
+/*
+ * PROJECT:     ReactOS Shell
+ * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
+ * PURPOSE:     Russian (Russia) resource file
+ * TRANSLATOR:  Copyright 2024 Vitaly Orekhov <vkvo2000@vivaldi.net>
+ */
+
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+
+IDD_WLANWIZ_DIALOG DIALOGEX 0, 0, 436, 290
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU
+CAPTION "Беспроводное сетевое подключение"
+FONT 8, "MS Shell Dlg"
+BEGIN
+   GROUPBOX "Сетевые задачи", IDC_WLANWIZ_MAINGROUP, 2, 8, 121, 71, BS_GROUPBOX | WS_GROUP, WS_EX_TRANSPARENT
+   PUSHBUTTON "Обновить список сетей", IDC_WLANWIZ_SCAN_NETWORKS, 5, 28, 115, 20, BS_OWNERDRAW | BS_PUSHBUTTON | WS_TABSTOP
+   PUSHBUTTON "Установить беспроводную сеть", IDC_WLANWIZ_INSTALL_WLAN, 5, 53, 115, 20, BS_OWNERDRAW | BS_PUSHBUTTON | WS_TABSTOP
+   GROUPBOX "Родственные задачи", IDC_WLANWIZ_RELATEDGROUP, 2, 82, 121, 71, BS_GROUPBOX | WS_GROUP,  WS_EX_TRANSPARENT
+   PUSHBUTTON "Изменить порядок предпочтения сетей", IDC_WLANWIZ_PREFERRED_APS, 5, 99, 115, 20, BS_OWNERDRAW | BS_PUSHBUTTON | WS_TABSTOP
+   PUSHBUTTON "Изменить дополнительные параметры", IDC_WLANWIZ_ADVANCED_SETTINGS, 5, 124, 115, 20, BS_OWNERDRAW | BS_PUSHBUTTON | WS_TABSTOP
+   LTEXT "", IDC_WLANWIZ_ETCHEDVERT, 125, 0, 0, 292, SS_ETCHEDVERT | WS_GROUP
+   LTEXT "Выберите беспроводную сеть", IDD_WLANWIZ_CHOOSE_NET_TITLE, 131, 6, 278, 19 
+   LTEXT "Щелкните по пункту в приведенном ниже списке, чтобы подключиться к &беспроводной сети в радиусе действия или получить дополнительные сведения.", IDD_WLANWIZ_CHOOSE_NET_SUBTITLE, 131, 32, 293, 17 
+   LISTBOX IDC_WLANWIZ_LISTBOX, 131, 50, 298, 211, LBS_NOTIFY | LBS_OWNERDRAWVARIABLE | LBS_HASSTRINGS | LBS_USETABSTOPS | LBS_WANTKEYBOARDINPUT | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | WS_TABSTOP 
+   PUSHBUTTON "Подкл&ючить", IDC_WLANWIZ_MAINBUTTON, 377, 268, 52, 14
+END
+
+STRINGTABLE
+BEGIN
+    IDS_DLGCLASS                    "Беспроводное сетевое подключение"
+    IDS_WLANWIZ_CONNECT             "&Подключить"
+    IDS_WLANWIZ_DISCONNECT          "&Разъединить"
+    IDS_WLANWIZ_CLOSE               "&Закрыть"
+
+    /* Listbox related strings */
+    IDS_WLANWIZ_CONNECTED           "Подключено"
+    IDS_WLANWIZ_DISCONNECTED        "Отключено"
+    IDS_WLANWIZ_CONNECTED_AUTO      "автоматически"
+    IDS_WLANWIZ_CONNECTED_MANU      "вручную"
+    IDS_WLANWIZ_ENCRYPTED_AP        "Защищённая беспроводная сеть"
+    IDS_WLANWIZ_UNENCRYPTED_AP      "Незащищённая беспроводная сеть"
+    IDS_WLANWIZ_ENCRYPTED_IBSS      "Защищённая сеть «компьютер-компьютер»"
+    IDS_WLANWIZ_UNENCRYPTED_IBSS    "Незащищённая сеть «компьютер-компьютер»"
+    IDS_WLANWIZ_NO_APS_DISCOVERED   "Беспроводные сети в радиусе действия не обнаружены.\n\nУбедитесь, что выключатель беспроводной сети включен.\nДля повторного сканирования нажмите кнопку «Обновить список сетей»."
+    IDS_WLANWIZ_SCANNING_NETWORKS   "Выполняется поиск беспроводных сетей в радиусе действия..."
+    IDS_WLANWIZ_HIDDEN_NETWORK      "Скрытая сеть"
+
+    IDS_WLANWIZ_EXPAND_UNENCRYPTED        "Эта сеть настроена для свободного подключения и передаваемая по ней информация может просматриваться другими пользователями. Если вы хотите подключиться к этой сети, нажмите кнопку «Подключить»."
+    IDS_WLANWIZ_EXPAND_ENCRYPTED          "Чтобы подключиться к этой сети, нажмите кнопку «Подключить» и следуйте дальнейшим инструкциям."
+    IDS_WLANWIZ_EXPAND_ENCRYPTED_OBSOLETE "Эта сеть использует устаревший стандарт безопасности, который не обеспечивает достаточный уровень защиты передаваемой информации. Если вы хотите подключиться к этой сети, нажмите кнопку «Подключить»."
+    IDS_WLANWIZ_EXPAND_CONNECTED          "В данный момент вы подключены к этой сети. Чтобы отключиться, нажмите кнопку «Разъединить»."
+
+    /* Sidebar button tooltips */
+    IDS_WLANWIZ_SCAN_NETWORKS_TT        "Произвести поиск беспроводных сетей"
+    IDS_WLANWIZ_INSTALL_WLAN_TT         "Запустить мастер установки беспроводной сети"
+    IDS_WLANWIZ_PREFERRED_APS_TT        "Открыть список предпочитаемых сетей, чтобы внести изменения"
+    IDS_WLANWIZ_ADVANCED_SETTINGS_TT    "Произвести дополнительные изменения, чтобы адаптер подключался к беспроводной сети"
+END
