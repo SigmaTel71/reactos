@@ -9,58 +9,86 @@
 #include <vector>
 
 #include <atlbase.h>
-#include <atlcom.h>
 #include <atlcoll.h>
 #include <atlconv.h>
 #include <atlstr.h>
 #include <atlwin.h>
-#include <prsht.h>
-#include <netcfgx.h>
-#include <netcfgn.h>
-#include <netcon.h>
 #include <strsafe.h>
+#include <shlobj.h>
+#include <wlanapi.h>
+#include <vssym32.h>
+
 #ifdef __REACTOS__
 #include <cguid.h>
 #include <CommCtrl.h>
+#include <shlwapi.h>
 #include <windef.h>
 #include <winbase.h>
 #include <winuser.h>
 #include <wingdi.h>
-#else
-DECLARE_INTERFACE_(INetConnectionPropertyUi, IUnknown)
-{
-	STDMETHOD_(HRESULT, QueryInterface)(THIS_ REFIID riid, void** ppv) PURE;
-	STDMETHOD_(ULONG, AddRef)(THIS)  PURE;
-	STDMETHOD_(ULONG, Release) (THIS) PURE;
-	STDMETHOD_(HRESULT, SetConnection) (THIS_ INetConnection* pCon) PURE;
-	STDMETHOD_(HRESULT, AddPages) (THIS_ HWND hwndParent, LPFNADDPROPSHEETPAGE pfnAddPage, LPARAM lParam) PURE;
-};
-
-#if !defined(__cplusplus) || defined(CINTERFACE)
-#define INetConnectionPropertyUi_QueryInterface(p,a,b)      (p)->lpVtbl->QueryInterface(p,a,b)
-#define INetConnectionPropertyUi_AddRef(p)                  (p)->lpVtbl->AddRef(p)
-#define INetConnectionPropertyUi_Release(p)                 (p)->lpVtbl->Release(p)
-#define INetConnectionPropertyUi_SetConnection(p,a)         (p)->lpVtbl->SetConnection(p,a)
-#define INetConnectionPropertyUi_AddPages(p,a,b,c)          (p)->lpVtbl->AddPages(p,a,b,c)
 #endif
 
-EXTERN_C const IID IID_INetConnectionPropertyUi;
-#endif
-#include <wlanapi.h>
 #include <Uxtheme.h>
-#include <vssym32.h>
 
 #include "resource.h"
 
 #define IDT_SCANNING_NETWORKS 700
-#define MAX_PROPERTY_SHEET_PAGE 10
 
-enum WLAN_SCAN_STATES {
+enum WLAN_SCAN_STATES
+{
 	STATUS_SCAN_COMPLETE,
 	STATUS_SCANNING,
 };
 
-BOOL CALLBACK PropSheetExCallback(HPROPSHEETPAGE hPage, LPARAM lParam);
+typedef struct tagNETCONIDSTRUCT
+{
+	WORD             Signature;
+	BYTE             Type[24];
+	GUID             guidId;
+	DWORD            dwCharacter;
+	ULONG            MediaType;
+	ULONG            Status;
+	ULONG            uNameOffset;
+	ULONG            uDeviceNameOffset;
+} NETCONIDSTRUCT, *PNETCONIDSTRUCT;
+
+static struct ExplorerInstance : public IUnknown
+{
+	HWND m_hWnd;
+	volatile LONG m_rc;
+
+	ExplorerInstance() : m_hWnd(NULL), m_rc(1) {}
+	virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv)
+	{
+		static const QITAB rgqit[] = { { 0 } };
+		return QISearch(this, rgqit, riid, ppv);
+	}
+	virtual ULONG STDMETHODCALLTYPE AddRef()
+	{
+		return InterlockedIncrement(&m_rc);
+	}
+	virtual ULONG STDMETHODCALLTYPE Release()
+	{
+		ULONG r = InterlockedDecrement(&m_rc);
+		if (!r)
+			PostMessageW(m_hWnd, WM_CLOSE, 0, 0);
+		return r;
+	}
+	void Wait()
+	{
+		SHSetInstanceExplorer(NULL);
+		m_hWnd = CreateWindowExW(WS_EX_TOOLWINDOW, L"STATIC", NULL, WS_POPUP,
+			0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
+		BOOL loop = InterlockedDecrement(&m_rc) != 0;
+		MSG msg;
+		while (loop && (int)GetMessageW(&msg, NULL, 0, 0) > 0)
+		{
+			if (msg.hwnd == m_hWnd && msg.message == WM_CLOSE)
+				PostMessageW(m_hWnd, WM_QUIT, 0, 0);
+			DispatchMessageW(&msg);
+		}
+	}
+} g_EI;
 
 class CWlanWizard : public CDialogImpl<CWlanWizard>
 {
@@ -121,7 +149,7 @@ public:
 
 	END_MSG_MAP()
 
-	HINSTANCE wlanwiz_hInstance;
+	HINSTANCE wlanwiz_hInstance = NULL;
 	HANDLE hMutex = INVALID_HANDLE_VALUE;
 	BOOL FindWlanDevice(ATL::CString wsGUID = L"");
 	void PreCloseCleanup();
@@ -133,7 +161,7 @@ private:
 	HANDLE hWlanClient = INVALID_HANDLE_VALUE;
 	HANDLE hScanThread = INVALID_HANDLE_VALUE;
 	HTHEME hTheme = NULL;
-	LPOLESTR sGUID;
+	LPOLESTR m_sGUID = NULL;
 	PWLAN_INTERFACE_INFO_LIST lstWlanInterfaces = NULL;
 	PWLAN_AVAILABLE_NETWORK_LIST lstWlanNetworks = NULL;
 	UINT uScanStatus = STATUS_SCAN_COMPLETE;
@@ -142,7 +170,7 @@ private:
 	LOGFONT lfCaption = { 0 };
 	ATL::CAtlList<int> LSidebarBtns;
 	ATL::CWindow cPrevWnd;
-	WPARAM wPrevCtlID;
+	WPARAM wPrevCtlID = 0;
 
 	HWND CreateToolTip(int toolID);
 	static DWORD WINAPI ScanNetworksThread(_In_ LPVOID lpParameter);
