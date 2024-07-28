@@ -52,14 +52,16 @@ WlanWizOpen(HWND, HINSTANCE, LPCSTR lpszCmdLine, int) {
         ExitProcess(ERROR_ALREADY_EXISTS);
     }
 
-    //if (gModule.FindWlanDevice(lpszCmdLine))
-    //{
+    if (gModule.FindWlanDevice(lpszCmdLine))
+    {
         CoInitialize(nullptr);
+        SHSetInstanceExplorer(&g_EI);
         InitCommonControls();
+
         gModule.DoModal();
-    //}
-    //else
-        //gModule.PreCloseCleanup();
+    }
+    else
+        gModule.PreCloseCleanup();
 }
 
 
@@ -104,10 +106,11 @@ HWND CWlanWizard::CreateToolTip(int nID)
 
 void CWlanWizard::PreCloseCleanup()
 {
-    CoTaskMemFree(gModule.sGUID);
+    CoTaskMemFree(gModule.m_sGUID);
     CloseHandle(gModule.hMutex);
     WlanFreeMemory(this->lstWlanInterfaces);
     WlanCloseHandle(this->hWlanClient, NULL);
+    g_EI.Wait();
     CoUninitialize();
 }
 
@@ -133,7 +136,10 @@ BOOL CWlanWizard::FindWlanDevice(ATL::CString sGUID)
         for (DWORD i = 0; i <= this->lstWlanInterfaces->dwNumberOfItems; i++)
         {
             if (IsEqualGUID(gWlanDeviceID, this->lstWlanInterfaces[i].InterfaceInfo->InterfaceGuid))
+            {
+                StringFromIID(gWlanDeviceID, &this->m_sGUID);
                 return TRUE;
+            }
         }
 
         /* Device not found. */
@@ -144,7 +150,7 @@ BOOL CWlanWizard::FindWlanDevice(ATL::CString sGUID)
         BOOL bWlanDevicePresent = this->lstWlanInterfaces->dwNumberOfItems > 0;
         
         if (bWlanDevicePresent)
-            dwResult = StringFromIID(this->lstWlanInterfaces[0].InterfaceInfo->InterfaceGuid, &this->sGUID);
+            dwResult = StringFromIID(this->lstWlanInterfaces[0].InterfaceInfo->InterfaceGuid, &this->m_sGUID);
 
         return bWlanDevicePresent;
     }
