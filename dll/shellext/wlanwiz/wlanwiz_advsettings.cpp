@@ -44,7 +44,10 @@ LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl
 	{
 		PNETCONIDSTRUCT nfid = reinterpret_cast<PNETCONIDSTRUCT>(lpConnItemPIDL);
 		if (IsEqualGUID(gWlanAdapter, nfid->guidId))
+		{
+			ILFree(lpConnItemPIDL);
 			break;
+		}
 	}
 
 	CComPtr<IContextMenu> pcm;
