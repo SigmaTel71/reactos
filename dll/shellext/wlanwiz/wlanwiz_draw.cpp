@@ -176,7 +176,6 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 tvRect[1].Blue  = GetBValue(crWnd) << 8;
                 tvRect[1].Alpha = 0x0000;
 
-                gRect.UpperLeft = 0;
                 gRect.LowerRight = 1;
 
                 GradientFill(pdis->hDC, tvRect, 2, &gRect, 1, GRADIENT_FILL_RECT_V);

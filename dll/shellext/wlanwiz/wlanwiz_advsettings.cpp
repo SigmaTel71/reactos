@@ -7,114 +7,66 @@
 
 #include "main.h"
 
-typedef void (CALLBACK NCFREENETCONPROPERTIES)(NETCON_PROPERTIES* pProps);
-
-static int CALLBACK
-PropSheetProc(HWND hwndDlg, UINT uMsg, LPARAM lParam)
-{
-	switch (uMsg)
-	{
-	case PSCB_INITIALIZED:
-		{
-			HICON hIcon = LoadIconW(NULL, MAKEINTRESOURCEW(IDI_MAINICON));
-			SendMessageW(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-			break;
-		}
-	}
-	return FALSE;
-}
-
-BOOL
-CALLBACK
-PropSheetExCallback(HPROPSHEETPAGE hPage, LPARAM lParam)
-{
-	PROPSHEETHEADERW* pinfo = (PROPSHEETHEADERW*)lParam;
-
-	if (pinfo->nPages < MAX_PROPERTY_SHEET_PAGE)
-	{
-		pinfo->phpage[pinfo->nPages++] = hPage;
-		return TRUE;
-	}
-	return FALSE;
-}
-
 LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
 {
-	IEnumNetConnection* pEnum = NULL;
-	INetConnection* pNetConn = NULL;
-	INetConnectionManager* pNetCM = NULL;
-	INetConnectionPropertyUi* pNetCCPui = NULL;
-	NETCON_PROPERTIES* pNetProps = NULL;
-	
-	CLSID clsid = CLSID_NULL;
-	HRESULT hr = S_OK;
-	ULONG ulCount = 0;
-
-	hr = CoCreateInstance(CLSID_ConnectionManager, NULL, CLSCTX_ALL, IID_INetConnectionManager, reinterpret_cast<LPVOID*>(&pNetCM));
-
-	if (FAILED(hr))
-		return FALSE;
-
-	hr = pNetCM->EnumConnections(NCME_DEFAULT, &pEnum);
+	HRESULT hr = ERROR_SUCCESS;
+	LPITEMIDLIST lpConnFolderPIDL = SHCloneSpecialIDList(NULL, CSIDL_CONNECTIONS, FALSE), lpConnItemPIDL = NULL;
+	LPCITEMIDLIST lpChildList = NULL;
 
 	if (FAILED(hr))
 		return FALSE;
 
 	/* Convert our WLAN adapter GUID from text to respective object */
 	GUID gWlanAdapter = GUID_NULL;
-	IIDFromString(this->sGUID, &gWlanAdapter);
+	hr = IIDFromString(this->m_sGUID, &gWlanAdapter);
 
-	/* Find our WLAN adapter */
-	while (pEnum->Next(1, &pNetConn, &ulCount) == S_OK)
+	if (FAILED(hr))
+		return FALSE;
+
+	/* Get into 'Network Connections' folder to find our WLAN device */
+	CComPtr<IShellFolder> pShfParent, pShfConn;
+	CComPtr<IEnumIDList> pEnum;
+
+	if (SUCCEEDED(SHBindToParent(lpConnFolderPIDL, IID_IShellFolder, reinterpret_cast<PVOID*>(&pShfParent.p), &lpChildList)))
 	{
-		hr = pNetConn->GetProperties(&pNetProps);
+		pShfParent->BindToObject(lpChildList, NULL, IID_IShellFolder, reinterpret_cast<PVOID*>(&pShfConn.p));
+		pShfParent.Release();
+	}
 
-		if (IsEqualGUID(pNetProps->guidId, gWlanAdapter))
+	ILFree(lpConnFolderPIDL);
+
+	if (pShfConn == nullptr)
+		return FALSE;
+
+	pShfConn->EnumObjects(NULL, SHCONTF_NONFOLDERS, &pEnum);
+
+	while (pEnum->Next(1, &lpConnItemPIDL, NULL) == S_OK)
+	{
+		PNETCONIDSTRUCT nfid = reinterpret_cast<PNETCONIDSTRUCT>(lpConnItemPIDL);
+		if (!IsEqualGUID(gWlanAdapter, nfid->guidId))
+			ILFree(lpConnItemPIDL);
+		else
 			break;
-
 	}
 
-	/* Open property sheet for our WLAN adapter */
-	hr = pNetConn->GetUiObjectClassId(&clsid);
-
-	if (FAILED(hr))
-		return FALSE;
-	
-	hr = CoCreateInstance(clsid, NULL, CLSCTX_INPROC_SERVER, IID_INetConnectionPropertyUi, reinterpret_cast<LPVOID*>(&pNetCCPui));
-
-	if (FAILED(hr))
-		return FALSE;
-
-	hr = pNetCCPui->SetConnection(pNetConn);
-
-	if (FAILED(hr))
-		return FALSE;
-
-	PROPSHEETHEADERW pinfo;
-	HPROPSHEETPAGE hppages[MAX_PROPERTY_SHEET_PAGE];
-
-	ZeroMemory(&pinfo, sizeof(PROPSHEETHEADERW));
-	ZeroMemory(hppages, sizeof(hppages));
-
-	pinfo.dwSize = sizeof(PROPSHEETHEADERW);
-	pinfo.dwFlags = PSH_NOCONTEXTHELP | PSH_USEICONID | PSH_PROPTITLE | PSH_NOAPPLYNOW | PSH_USECALLBACK;
-	pinfo.hInstance = wlanwiz_hInstance;
-	pinfo.pszIcon = MAKEINTRESOURCEW(IDI_MAINICON);
-	pinfo.phpage = hppages;
-	pinfo.hwndParent = NULL;
-	pinfo.pfnCallback = PropSheetProc;
-	pinfo.pszCaption = pNetProps->pszwName;
-
-	hr = pNetCCPui->AddPages(NULL, PropSheetExCallback, reinterpret_cast<LPARAM>(&pinfo));
-	if (SUCCEEDED(hr))
+	CComPtr<IContextMenu> pcm;
+	if (SUCCEEDED(pShfConn->GetUIObjectOf(NULL, 1, const_cast<LPCITEMIDLIST*>(&lpConnItemPIDL), IID_IContextMenu, NULL, reinterpret_cast<PVOID*>(&pcm.p))))
 	{
-		if (PropertySheetW(&pinfo) < 0)
-			hr = E_FAIL;
-	}
-	
-	HMODULE hmnetshell = LoadLibraryW(L"netshell.dll");
-	NCFREENETCONPROPERTIES* NcFreeNetconProperties = (NCFREENETCONPROPERTIES*)GetProcAddress(hmnetshell, "NcFreeNetconProperties");
-	NcFreeNetconProperties(pNetProps);
+		CMINVOKECOMMANDINFO ici = { sizeof(ici) };
+		ici.hwnd = NULL;
+		ici.cbSize = sizeof(ici);
+		ici.nShow = SW_NORMAL;
+		ici.lpVerb = "properties";
+		pcm->InvokeCommand(&ici);
+		pcm.Release();
+	};
+
+	ILFree(lpConnItemPIDL);
+	pShfConn.Release();
+
+	/* Below you can find a rather horrible HACK. */
+	this->ShowWindow(SW_HIDE);
+	this->SendMessageW(WM_CLOSE, NULL, NULL);
 
 	return FALSE;
 }
