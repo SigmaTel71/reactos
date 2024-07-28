@@ -62,7 +62,7 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
 
         /* Add discovered networks to listbox and sort networks by signal level */
         std::vector<std::pair<UINT, UINT>> vIndexToSignalQuality;
-        for (this->lstWlanNetworks->dwIndex;
+        for (;
             this->lstWlanNetworks->dwIndex <= this->lstWlanNetworks->dwNumberOfItems - 1;
             this->lstWlanNetworks->dwIndex++)
         {
@@ -70,7 +70,7 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
                 this->lstWlanNetworks->dwIndex));
         }
 
-        std::sort(vIndexToSignalQuality.begin(), vIndexToSignalQuality.end(), [](std::pair<UINT, UINT>& left, std::pair<UINT, UINT>& right)
+        std::sort(vIndexToSignalQuality.begin(), vIndexToSignalQuality.end(), [](std::pair<UINT, UINT> left, std::pair<UINT, UINT> right)
             {
                 return left.first > right.first;
             });
@@ -103,7 +103,7 @@ DWORD WINAPI CWlanWizard::ScanNetworksThread(_In_ LPVOID lpParameter)
 {
     GUID gWlanDeviceID = { 0 };
     CWlanWizard* cwwThis = reinterpret_cast<CWlanWizard*>(lpParameter);
-    IIDFromString(cwwThis->sGUID, &gWlanDeviceID);
+    IIDFromString(cwwThis->m_sGUID, &gWlanDeviceID);
 
     WlanScan(cwwThis->hWlanClient, &gWlanDeviceID, NULL, NULL, NULL);
     WlanGetAvailableNetworkList(cwwThis->hWlanClient, &gWlanDeviceID, 1, NULL, &cwwThis->lstWlanNetworks);
