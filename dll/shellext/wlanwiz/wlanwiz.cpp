@@ -137,7 +137,7 @@ BOOL CWlanWizard::FindWlanDevice(ATL::CString sGUID)
         {
             if (IsEqualGUID(gWlanDeviceID, this->lstWlanInterfaces[i].InterfaceInfo->InterfaceGuid))
             {
-                this->m_sGUID = sGUID.GetBuffer();
+                StringFromIID(gWlanDeviceID, &this->m_sGUID);
                 return TRUE;
             }
         }
