@@ -43,11 +43,10 @@ LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl
 	while (pEnum->Next(1, &lpConnItemPIDL, NULL) == S_OK)
 	{
 		PNETCONIDSTRUCT nfid = reinterpret_cast<PNETCONIDSTRUCT>(lpConnItemPIDL);
-		if (IsEqualGUID(gWlanAdapter, nfid->guidId))
-		{
+		if (!IsEqualGUID(gWlanAdapter, nfid->guidId))
 			ILFree(lpConnItemPIDL);
+		else
 			break;
-		}
 	}
 
 	CComPtr<IContextMenu> pcm;
@@ -55,6 +54,7 @@ LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl
 	{
 		CMINVOKECOMMANDINFO ici = { sizeof(ici) };
 		ici.hwnd = NULL;
+		ici.cbSize = sizeof(ici);
 		ici.nShow = SW_NORMAL;
 		ici.lpVerb = "properties";
 		pcm->InvokeCommand(&ici);
