@@ -55,7 +55,7 @@ LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl
 		CMINVOKECOMMANDINFO ici = { sizeof(ici) };
 		ici.hwnd = NULL;
 		ici.cbSize = sizeof(ici);
-		ici.nShow = SW_NORMAL;
+		ici.nShow = SW_SHOW;
 		ici.lpVerb = "properties";
 		pcm->InvokeCommand(&ici);
 		pcm.Release();
