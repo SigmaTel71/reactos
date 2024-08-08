@@ -24,7 +24,7 @@ LRESULT CWlanWizard::OnPaint(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
     HDC hDC = BeginPaint(&ps);
 
     /* Paint the sidebar, if we have theming enabled */
-    if (this->hTheme)
+    if (this->hThemeEB)
     {
         RECT rcEtchVert = { 0 };
         ATL::CWindow hEtchVert = GetDlgItem(IDC_WLANWIZ_ETCHEDVERT);
@@ -34,7 +34,7 @@ LRESULT CWlanWizard::OnPaint(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
         rcEtchVert.left = 0;
         rcEtchVert.top = 0;
 
-        DrawThemeBackground(this->hTheme, hDC, 0, 0, &rcEtchVert, NULL);
+        DrawThemeBackground(this->hThemeEB, hDC, 0, 0, &rcEtchVert, NULL);
     }
 
     EndPaint(&ps);
@@ -65,24 +65,24 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 /* Draw button caption and icon on other DC when themed */
                 HBITMAP hbmBtn = CreateCompatibleBitmap(pdis->hDC, pdis->rcItem.right - pdis->rcItem.left, pdis->rcItem.bottom - pdis->rcItem.top);
                 HDC hDCBtn = CreateCompatibleDC(pdis->hDC);
-                HGDIOBJ hOld = INVALID_HANDLE_VALUE;
+                HGDIOBJ hOld = NULL;
 
                 GetDlgItemTextW(static_cast<int>(wParam), cswWindowText);
 
                 /* Step 1: Prepare drawing surface */
                 HBRUSH hbrRect = reinterpret_cast<HBRUSH>(COLOR_3DFACE + 1);
                 
-                if (this->hTheme)
+                if (this->hThemeEB)
                 {
                     SetBkMode(hDCBtn, TRANSPARENT);
                     SelectObject(hDCBtn, hbmBtn);
 
                     COLORREF crFill = 0;
-                    GetThemeColor(this->hTheme, EBP_NORMALGROUPBACKGROUND, 0, TMT_FILLCOLOR, &crFill);
+                    GetThemeColor(this->hThemeEB, EBP_NORMALGROUPBACKGROUND, 0, TMT_FILLCOLOR, &crFill);
                     hbrRect = CreateSolidBrush(crFill);
                 }
 
-                FillRect(!this->hTheme ? pdis->hDC : hDCBtn,
+                FillRect(!this->hThemeEB ? pdis->hDC : hDCBtn,
                          &pdis->rcItem,
                          hbrRect);
 
@@ -92,7 +92,7 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                  * The +20 offset originates from resource.h, the IDs are laid out in a way
                  * they can be safely batch processed in loops, as the range is fixed. */
                 if (wParam >= IDC_WLANWIZ_SCAN_NETWORKS && wParam <= IDC_WLANWIZ_ADVANCED_SETTINGS)
-                    DrawIconEx(this->hTheme ? hDCBtn : pdis->hDC,
+                    DrawIconEx(this->hThemeEB ? hDCBtn : pdis->hDC,
                                pdis->rcItem.left + 2,
                                pdis->rcItem.top + 2,
                                LoadIconW(wlanwiz_hInstance, MAKEINTRESOURCEW(wParam + 20)),
@@ -106,15 +106,15 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 HFONT hfBtnCaption = NULL;
                 LOGFONTW lfBtnCaption = { 0 };
                 
-                if (this->hTheme)
+                if (this->hThemeEB)
                 {
                     COLORREF crBtnColor = 0;
                     /* According to msstyles, the items do not have transparent background,
                      * so they have been filled by color to blend in. Same as in wzcdlg. */
-                    GetThemeColor(this->hTheme, EBP_NORMALGROUPBACKGROUND, 0, TMT_TEXTCOLOR, &crBtnColor);
+                    GetThemeColor(this->hThemeEB, EBP_NORMALGROUPBACKGROUND, 0, TMT_TEXTCOLOR, &crBtnColor);
 
                     /* We can't use DrawThemeText directly as it's not aware of underline style? */
-                    GetThemeFont(this->hTheme, hDCBtn, EBP_NORMALGROUPBACKGROUND, 0, TMT_FONT, &lfBtnCaption);
+                    GetThemeFont(this->hThemeEB, hDCBtn, EBP_NORMALGROUPBACKGROUND, 0, TMT_FONT, &lfBtnCaption);
                     SetTextColor(hDCBtn, crBtnColor);
                 }
                 else
@@ -123,20 +123,20 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 lfBtnCaption.lfUnderline = this->bMouseOverButtons && pdis->CtlID == this->wPrevCtlID;
                 hfBtnCaption = CreateFontIndirectW(&lfBtnCaption);
 
-                hOld = SelectObject(this->hTheme ? hDCBtn : pdis->hDC, hfBtnCaption);
+                hOld = SelectObject(this->hThemeEB ? hDCBtn : pdis->hDC, hfBtnCaption);
 
-                DrawTextW(this->hTheme ? hDCBtn : pdis->hDC,
+                DrawTextW(this->hThemeEB ? hDCBtn : pdis->hDC,
                           cswWindowText,
                           cswWindowText.GetLength(),
                           &rcBtnText,
                           DT_WORDBREAK);
 
-                SelectObject(this->hTheme ? hDCBtn : pdis->hDC, hOld);
+                SelectObject(this->hThemeEB ? hDCBtn : pdis->hDC, hOld);
                 DeleteObject(hfBtnCaption);
 
                 /* Step 4: Combine themed buttons with item DC
                  * This step is executed only when visual styles are applied. */
-                if (this->hTheme)
+                if (this->hThemeEB)
                     BitBlt(pdis->hDC, 0, 0, pdis->rcItem.right - pdis->rcItem.left, pdis->rcItem.bottom - pdis->rcItem.top, hDCBtn, 0, 0, SRCCOPY);
 
                 DeleteObject(hbmBtn);
@@ -146,45 +146,18 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
             /* Draw listbox content, if the network list is not empty */
             if (this->lstWlanNetworks && this->lstWlanNetworks->dwNumberOfItems > 0 && pdis->CtlID == IDC_WLANWIZ_LISTBOX)
             {
-                COLORREF cr3dFace = 0;
-                COLORREF crWnd = 0;
-                GRADIENT_RECT gRect = { 0 };
-                TRIVERTEX tvRect[2] = { 0 };
-
-                if (this->hTheme)
+                ATL::CWindow cwListBox = GetDlgItem(pdis->CtlID);
+                if (this->bSelectedForInvalidate && this->dwSelectedItemID != cwListBox.SendMessageW(LB_GETCURSEL))
                 {
-                    GetThemeColor(this->hTheme, EBP_NORMALGROUPBACKGROUND, 0, TMT_FILLCOLOR, &cr3dFace);
-                    GetThemeColor(this->hTheme, EBP_NORMALGROUPBACKGROUND, 0, TMT_BORDERCOLOR, &crWnd);
+                    cwListBox.Invalidate(FALSE);
+                    this->bSelectedForInvalidate = FALSE;
+                    break;
                 }
-                else
-                {
-                    cr3dFace = GetSysColor(COLOR_3DFACE);
-                    crWnd = GetSysColor(COLOR_WINDOW);
-                }
-            
-                tvRect[0].x     = pdis->rcItem.right;
-                tvRect[0].y     = pdis->rcItem.bottom;
-                tvRect[0].Red   = GetRValue(cr3dFace) << 8;
-                tvRect[0].Green = GetGValue(cr3dFace) << 8;
-                tvRect[0].Blue  = GetBValue(cr3dFace) << 8;
-                tvRect[0].Alpha = 0x0000;
 
-                tvRect[1].x     = pdis->rcItem.left;
-                tvRect[1].y     = pdis->rcItem.top;
-                tvRect[1].Red   = GetRValue(crWnd) << 8;
-                tvRect[1].Green = GetGValue(crWnd) << 8;
-                tvRect[1].Blue  = GetBValue(crWnd) << 8;
-                tvRect[1].Alpha = 0x0000;
-
-                gRect.LowerRight = 1;
-
-                GradientFill(pdis->hDC, tvRect, 2, &gRect, 1, GRADIENT_FILL_RECT_V);
-
-                /* Draw network SSID */
+                /* Prepare SSID for drawing, color is determined by selection */
                 UINT uSSIDLength = static_cast<UINT>(SendDlgItemMessageW(pdis->CtlID, LB_GETTEXTLEN, pdis->itemID, NULL));
                 UINT uItemRealID = static_cast<UINT>(SendDlgItemMessageW(pdis->CtlID, LB_GETITEMDATA, pdis->itemID, NULL));
-                UINT uRSSI = this->lstWlanNetworks->Network[uItemRealID].wlanSignalQuality;
-            
+
                 cswWindowText.Empty();
                 cswWindowText.Preallocate(uSSIDLength);
 
@@ -192,20 +165,71 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 cswWindowText.ReleaseBuffer();
 
                 /* SSID is drawn with bold font */
+                COLORREF crItemText = NULL;
                 this->lfCaption.lfWeight = FW_BOLD;
                 this->lfCaption.lfUnderline = FALSE;
 
                 HFONT hfCaption = CreateFontIndirectW(&this->lfCaption);
                 HGDIOBJ hOld = SelectObject(pdis->hDC, hfCaption);
 
-                TextOutW(pdis->hDC, 4, pdis->rcItem.top + 4, cswWindowText, cswWindowText.GetLength());
+                if (!(pdis->itemState & ODS_SELECTED))
+                {
+                    COLORREF cr3dFace = 0;
+                    COLORREF crWnd = 0;
+                    GRADIENT_RECT gRect = { 0, 1 };
+                    TRIVERTEX tvRect[2] = { 0 };
+
+                    if (this->hThemeEB)
+                    {
+                        GetThemeColor(this->hThemeEB, EBP_NORMALGROUPBACKGROUND, 0, TMT_FILLCOLOR, &cr3dFace);
+                        GetThemeColor(this->hThemeEB, EBP_NORMALGROUPBACKGROUND, 0, TMT_BORDERCOLOR, &crWnd);
+                    }
+                    else
+                    {
+                        cr3dFace = GetSysColor(COLOR_3DFACE);
+                        crWnd = GetSysColor(COLOR_WINDOW);
+                    }
             
+                    tvRect[0].x     = pdis->rcItem.right;
+                    tvRect[0].y     = pdis->rcItem.bottom;
+                    tvRect[0].Red   = GetRValue(cr3dFace) << 8;
+                    tvRect[0].Green = GetGValue(cr3dFace) << 8;
+                    tvRect[0].Blue  = GetBValue(cr3dFace) << 8;
+                    tvRect[0].Alpha = 0x0000;
+
+                    tvRect[1].x     = pdis->rcItem.left;
+                    tvRect[1].y     = pdis->rcItem.top;
+                    tvRect[1].Red   = GetRValue(crWnd) << 8;
+                    tvRect[1].Green = GetGValue(crWnd) << 8;
+                    tvRect[1].Blue  = GetBValue(crWnd) << 8;
+                    tvRect[1].Alpha = 0x0000;
+
+                    GradientFill(pdis->hDC, tvRect, 2, &gRect, 1, GRADIENT_FILL_RECT_V);
+                    cwListBox.SendMessageW(LB_SETITEMHEIGHT, pdis->itemID, 56);
+                }
+                else
+                {
+                    /* Themed listbox items appeared in Windows Vista, so no DrawThemeBackground here */
+                    HBRUSH hbrSelectedBg = GetSysColorBrush(COLOR_HIGHLIGHT);
+                    FillRect(pdis->hDC, &pdis->rcItem, hbrSelectedBg);
+                    DeleteObject(hbrSelectedBg);
+
+                    cwListBox.SendMessageW(LB_SETITEMHEIGHT, pdis->itemID, 136);
+                    this->bSelectedForInvalidate = TRUE;
+                    this->dwSelectedItemID = pdis->itemID;
+                }
+
+                crItemText = SetTextColor(pdis->hDC, GetSysColor(pdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT));
+                TextOutW(pdis->hDC, 4, pdis->rcItem.top + 4, cswWindowText, cswWindowText.GetLength());
+                SetTextColor(pdis->hDC, crItemText);
+
                 SelectObject(pdis->hDC, hOld);
                 DeleteObject(hfCaption);
 
                 this->lfCaption.lfWeight = FW_NORMAL;
 
                 /* Choose signal level icon depending on signal strength */
+                UINT uRSSI = this->lstWlanNetworks->Network[uItemRealID].wlanSignalQuality;
                 int iRSSIResIcon = IDI_WLANICON;
 
                 if (16 <= uRSSI && uRSSI < 36)
@@ -221,7 +245,7 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
 
                 DrawIconEx(pdis->hDC,
                            pdis->rcItem.right - 36,
-                           pdis->rcItem.bottom - 32,
+                           pdis->rcItem.top + 24,
                            LoadIconW(wlanwiz_hInstance, MAKEINTRESOURCEW(iRSSIResIcon)),
                            32,
                            32,
@@ -229,6 +253,11 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                            NULL,
                            DI_NORMAL);
 
+                /* Shrink focus rectangle for listbox items */
+                pdis->rcItem.left += 1;
+                pdis->rcItem.top += 1;
+                pdis->rcItem.right -= 1;
+                pdis->rcItem.bottom -= 1;
             }
 
             if (pdis->itemState & ODS_FOCUS)
@@ -243,8 +272,8 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
 
 LRESULT CWlanWizard::OnThemeChanged(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    CloseThemeData(this->hTheme);
-    this->hTheme = OpenThemeData(m_hWnd, L"ExplorerBar");
+    CloseThemeData(this->hThemeEB);
+    this->hThemeEB = OpenThemeData(m_hWnd, L"ExplorerBar");
 
     return FALSE;
 }

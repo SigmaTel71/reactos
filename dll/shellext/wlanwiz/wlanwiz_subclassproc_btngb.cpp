@@ -30,7 +30,7 @@ LRESULT CWlanWizard::OnPaintGroupBox(UINT nMsg, WPARAM wParam, LPARAM lParam, BO
         HBITMAP hbmMem = CreateCompatibleBitmap(hDCMain, rc.right - rc.left, rc.bottom - rc.top);
         HGDIOBJ hOld = SelectObject(hDCMem, hbmMem);
 
-        if (this->hTheme)
+        if (this->hThemeEB)
         {
             /* Theme the sidebar groupbox controls */
             RECT rcGroupBoxHeader = { 0 };
@@ -38,14 +38,14 @@ LRESULT CWlanWizard::OnPaintGroupBox(UINT nMsg, WPARAM wParam, LPARAM lParam, BO
             MARGINS mHeader = { 0 };
             LOGFONTW lfGroupBoxCaption = { 0 };
 
-            GetThemeMargins(this->hTheme, hDCMain, EBP_NORMALGROUPHEAD, 0, TMT_CONTENTMARGINS, &rc, &mHeader);
-            GetThemeFont(this->hTheme, hDCMain, EBP_NORMALGROUPHEAD, 0, TMT_FONT, &lfGroupBoxCaption);
+            GetThemeMargins(this->hThemeEB, hDCMain, EBP_NORMALGROUPHEAD, 0, TMT_CONTENTMARGINS, &rc, &mHeader);
+            GetThemeFont(this->hThemeEB, hDCMain, EBP_NORMALGROUPHEAD, 0, TMT_FONT, &lfGroupBoxCaption);
 
             rcGroupBoxHeader = rc;
             rcGroupBoxHeader.bottom = -lfGroupBoxCaption.lfHeight + mHeader.cyBottomHeight + mHeader.cyTopHeight + rcGroupBoxHeader.top;
 
-            DrawThemeBackground(this->hTheme, hDCMain, EBP_NORMALGROUPHEAD, 0, &rcGroupBoxHeader, NULL);
-            DrawThemeEdge(this->hTheme, hDCMain, EBP_NORMALGROUPHEAD, 0, &rc, 0, BF_ADJUST, &rc);
+            DrawThemeBackground(this->hThemeEB, hDCMain, EBP_NORMALGROUPHEAD, 0, &rcGroupBoxHeader, NULL);
+            DrawThemeEdge(this->hThemeEB, hDCMain, EBP_NORMALGROUPHEAD, 0, &rc, 0, BF_ADJUST, &rc);
 
             ATL::CStringW cswGBCaption;
             hWnd.GetWindowTextW(cswGBCaption);
@@ -55,14 +55,14 @@ LRESULT CWlanWizard::OnPaintGroupBox(UINT nMsg, WPARAM wParam, LPARAM lParam, BO
             rcGroupBoxHeader.right -= mHeader.cxRightWidth;
             rcGroupBoxHeader.left += mHeader.cxLeftWidth;
 
-            DrawThemeText(this->hTheme, hDCMain, EBP_NORMALGROUPHEAD, 0, cswGBCaption, cswGBCaption.GetLength(), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS | DT_VCENTER, 0, &rcGroupBoxHeader);
+            DrawThemeText(this->hThemeEB, hDCMain, EBP_NORMALGROUPHEAD, 0, cswGBCaption, cswGBCaption.GetLength(), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS | DT_VCENTER, 0, &rcGroupBoxHeader);
 
             /* Draw groupbox content */
             rcGroupBoxBg = rc;
             rcGroupBoxBg.top = rcGroupBoxHeader.bottom;
 
-            DrawThemeBackground(this->hTheme, hDCMain, EBP_NORMALGROUPBACKGROUND, 0, &rcGroupBoxBg, NULL);
-            DrawThemeEdge(this->hTheme, hDCMain, EBP_NORMALGROUPBACKGROUND, 0, &rcGroupBoxBg, 0, BF_ADJUST, &rc);
+            DrawThemeBackground(this->hThemeEB, hDCMain, EBP_NORMALGROUPBACKGROUND, 0, &rcGroupBoxBg, NULL);
+            DrawThemeEdge(this->hThemeEB, hDCMain, EBP_NORMALGROUPBACKGROUND, 0, &rcGroupBoxBg, 0, BF_ADJUST, &rc);
 
             BitBlt(hDCMem, 0, 0, rc.right - rc.left, rc.bottom - rc.top, hDCMain, 0, 0, SRCCOPY);
         }
