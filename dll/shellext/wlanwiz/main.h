@@ -43,7 +43,8 @@ enum WLAN_SCAN_STATES
 typedef struct tagNETCONIDSTRUCT
 {
 	WORD             Signature;
-	BYTE             Type[24];
+	BYTE             Unknown[8];
+	CLSID            clsidThisObject;
 	GUID             guidId;
 	DWORD            dwCharacter;
 	ULONG            MediaType;
@@ -160,7 +161,10 @@ private:
 	DWORD dwNegotiatedVersion = 0;
 	HANDLE hWlanClient = INVALID_HANDLE_VALUE;
 	HANDLE hScanThread = INVALID_HANDLE_VALUE;
-	HTHEME hTheme = NULL;
+	/* We can't have one HTHEME to rule them all.
+	 * ExplorerBar is added for now, later expansion will require more handles to use.
+	 */
+	HTHEME hThemeEB = NULL;
 	LPOLESTR m_sGUID = NULL;
 	PWLAN_INTERFACE_INFO_LIST lstWlanInterfaces = NULL;
 	PWLAN_AVAILABLE_NETWORK_LIST lstWlanNetworks = NULL;
@@ -171,6 +175,10 @@ private:
 	ATL::CAtlList<int> LSidebarBtns;
 	ATL::CWindow cPrevWnd;
 	WPARAM wPrevCtlID = 0;
+
+	/* Listbox specific variables */
+	BOOL bSelectedForInvalidate = FALSE;
+	DWORD dwSelectedItemID = 0;
 
 	HWND CreateToolTip(int toolID);
 	static DWORD WINAPI ScanNetworksThread(_In_ LPVOID lpParameter);
