@@ -158,7 +158,7 @@ BOOL CWlanWizard::FindWlanDevice(ATL::CString sGUID)
 
 LRESULT CWlanWizard::OnInitDialog(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    this->hTheme = OpenThemeData(m_hWnd, L"ExplorerBar");
+    this->hThemeEB = OpenThemeData(m_hWnd, L"ExplorerBar");
 
     /* Create a list of sidebar buttons for easier 'batch' calling */
     LSidebarBtns.AddTail(IDC_WLANWIZ_SCAN_NETWORKS);
