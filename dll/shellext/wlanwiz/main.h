@@ -129,6 +129,7 @@ public:
 		MESSAGE_HANDLER(WM_VKEYTOITEM, OnVKeyToItem);
 		COMMAND_ID_HANDLER(IDC_WLANWIZ_SCAN_NETWORKS, OnScanNetworks);
 		COMMAND_ID_HANDLER(IDC_WLANWIZ_ADVANCED_SETTINGS, OnAdvancedSettings);
+		COMMAND_ID_HANDLER(IDC_WLANWIZ_LISTBOX, OnListBox);
 
 	ALT_MSG_MAP(1)
 		MESSAGE_HANDLER(WM_GETDLGCODE, OnGetDlgCode);
@@ -196,6 +197,7 @@ private:
 	/* Control callbacks */
 	LRESULT OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
+	LRESULT OnListBox(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	
 	/* ALT_MSG_MAP 1 */
 	LRESULT OnEraseBkgndGroupBoxBtns(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);

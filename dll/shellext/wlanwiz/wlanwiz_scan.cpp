@@ -57,6 +57,7 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
     if (this->lstWlanNetworks->dwNumberOfItems > 0)
     {
         m_ListboxWLAN.EnableWindow();
+        m_ConnectButton.EnableWindow();
 
         /* Show discovered networks */
         RECT rc;
@@ -97,7 +98,6 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
 
     m_ListboxWLAN.RedrawWindow(NULL, NULL, RDW_ERASENOW | RDW_ERASE | RDW_INVALIDATE);
     m_ListboxWLAN.SetFocus();
-    m_ListboxWLAN.SendMessageW(LB_SETCURSEL, 0);
 
     return FALSE;
 }
