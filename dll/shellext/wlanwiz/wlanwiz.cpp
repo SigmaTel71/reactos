@@ -304,3 +304,27 @@ LRESULT CWlanWizard::OnMouseMoveMain(UINT nMsg, WPARAM wParam, LPARAM lParam, BO
 
     return FALSE;
 }
+
+LRESULT CWlanWizard::OnListBox(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
+{
+    switch (wNotifyCode)
+    {
+    case LBN_SELCHANGE:
+        ATL::CWindow cwLB = hWndCtl;
+        LRESULT dwItemID = cwLB.SendMessageW(LB_GETCURSEL, 0, 0);
+
+        if (dwItemID == LB_ERR)
+            break;
+
+        cwLB.SendMessageW(LB_SETITEMHEIGHT, this->dwSelectedItemID, 56);
+        cwLB.SendMessageW(LB_SETITEMHEIGHT, dwItemID, 136);
+        
+        this->dwSelectedItemID = dwItemID;
+        
+        cwLB.Invalidate(FALSE);
+        cwLB.UpdateWindow();
+        break;
+    }
+
+    return FALSE;
+}
