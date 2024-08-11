@@ -13,9 +13,12 @@ LRESULT CWlanWizard::OnMeasureItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL
     {
         case IDC_WLANWIZ_LISTBOX:
             pmis->itemHeight = 56;
+            if (m_ListboxWLAN.SendMessageW(LB_GETCURSEL) == static_cast<LRESULT>(this->dwSelectedItemID))
+                pmis->itemHeight = 136;
+            bHandled = TRUE;
             break;
     }
-    return FALSE;
+    return TRUE;
 }
 
 LRESULT CWlanWizard::OnPaint(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -146,14 +149,6 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
             /* Draw listbox content, if the network list is not empty */
             if (this->lstWlanNetworks && this->lstWlanNetworks->dwNumberOfItems > 0 && pdis->CtlID == IDC_WLANWIZ_LISTBOX)
             {
-                ATL::CWindow cwListBox = GetDlgItem(pdis->CtlID);
-                if (this->bSelectedForInvalidate && this->dwSelectedItemID != cwListBox.SendMessageW(LB_GETCURSEL))
-                {
-                    cwListBox.Invalidate(FALSE);
-                    this->bSelectedForInvalidate = FALSE;
-                    break;
-                }
-
                 /* Prepare SSID for drawing, color is determined by selection */
                 UINT uSSIDLength = static_cast<UINT>(SendDlgItemMessageW(pdis->CtlID, LB_GETTEXTLEN, pdis->itemID, NULL));
                 UINT uItemRealID = static_cast<UINT>(SendDlgItemMessageW(pdis->CtlID, LB_GETITEMDATA, pdis->itemID, NULL));
@@ -205,7 +200,6 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                     tvRect[1].Alpha = 0x0000;
 
                     GradientFill(pdis->hDC, tvRect, 2, &gRect, 1, GRADIENT_FILL_RECT_V);
-                    cwListBox.SendMessageW(LB_SETITEMHEIGHT, pdis->itemID, 56);
                 }
                 else
                 {
@@ -213,10 +207,6 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                     HBRUSH hbrSelectedBg = GetSysColorBrush(COLOR_HIGHLIGHT);
                     FillRect(pdis->hDC, &pdis->rcItem, hbrSelectedBg);
                     DeleteObject(hbrSelectedBg);
-
-                    cwListBox.SendMessageW(LB_SETITEMHEIGHT, pdis->itemID, 136);
-                    this->bSelectedForInvalidate = TRUE;
-                    this->dwSelectedItemID = pdis->itemID;
                 }
 
                 crItemText = SetTextColor(pdis->hDC, GetSysColor(pdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT));
