@@ -15,13 +15,14 @@
 #include <atlwin.h>
 #include <strsafe.h>
 #include <shlobj.h>
+#include <shlwapi.h>
 #include <wlanapi.h>
 #include <vssym32.h>
 
 #ifdef __REACTOS__
 #include <cguid.h>
 #include <CommCtrl.h>
-#include <shlwapi.h>
+#include <undocshell.h>
 #include <windef.h>
 #include <winbase.h>
 #include <winuser.h>

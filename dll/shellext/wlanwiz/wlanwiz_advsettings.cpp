@@ -6,6 +6,9 @@
  */
 
 #include "main.h"
+#ifndef __REACTOS__
+typedef HRESULT (WINAPI* _SHInvokeCommand)(HWND, IShellFolder*, LPCITEMIDLIST, LPCSTR);
+#endif
 
 LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
 {
@@ -49,17 +52,16 @@ LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl
 			break;
 	}
 
-	CComPtr<IContextMenu> pcm;
-	if (SUCCEEDED(pShfConn->GetUIObjectOf(NULL, 1, const_cast<LPCITEMIDLIST*>(&lpConnItemPIDL), IID_IContextMenu, NULL, reinterpret_cast<PVOID*>(&pcm.p))))
-	{
-		CMINVOKECOMMANDINFO ici = { sizeof(ici) };
-		ici.hwnd = NULL;
-		ici.cbSize = sizeof(ici);
-		ici.nShow = SW_SHOW;
-		ici.lpVerb = "properties";
-		pcm->InvokeCommand(&ici);
-		pcm.Release();
-	};
+#ifndef __REACTOS__
+	HMODULE hmShell32 = GetModuleHandleW(L"shlwapi.dll");
+
+	if (hmShell32 == NULL)
+		return FALSE;
+
+	_SHInvokeCommand SHInvokeCommand = reinterpret_cast<_SHInvokeCommand>(GetProcAddress(hmShell32, MAKEINTRESOURCEA(363)));
+#endif
+
+	SHInvokeCommand(NULL, pShfConn, lpConnItemPIDL, "properties");
 
 	ILFree(lpConnItemPIDL);
 	pShfConn.Release();
