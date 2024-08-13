@@ -9,64 +9,21 @@
 
 LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
 {
-	HRESULT hr = ERROR_SUCCESS;
-	LPITEMIDLIST lpConnFolderPIDL = SHCloneSpecialIDList(NULL, CSIDL_CONNECTIONS, FALSE), lpConnItemPIDL = NULL;
-	LPCITEMIDLIST lpChildList = NULL;
+	ATL::CStringW cswNetworkAdapterPath = L"";
+	LPOLESTR lpwszNetConCLSID;
 
-	if (FAILED(hr))
-		return FALSE;
+	HRESULT hr = StringFromIID(CLSID_NetworkConnections, &lpwszNetConCLSID);
 
-	/* Convert our WLAN adapter GUID from text to respective object */
-	GUID gWlanAdapter = GUID_NULL;
-	hr = IIDFromString(this->m_sGUID, &gWlanAdapter);
-
-	if (FAILED(hr))
-		return FALSE;
-
-	/* Get into 'Network Connections' folder to find our WLAN device */
-	CComPtr<IShellFolder> pShfParent, pShfConn;
-	CComPtr<IEnumIDList> pEnum;
-
-	if (SUCCEEDED(SHBindToParent(lpConnFolderPIDL, IID_IShellFolder, reinterpret_cast<PVOID*>(&pShfParent.p), &lpChildList)))
+	if (SUCCEEDED(hr))
 	{
-		pShfParent->BindToObject(lpChildList, NULL, IID_IShellFolder, reinterpret_cast<PVOID*>(&pShfConn.p));
-		pShfParent.Release();
+		cswNetworkAdapterPath.Format(L"::%s\\::%s", lpwszNetConCLSID, this->m_sGUID);
+
+		/* NT 5.1 & 5.2 would still try to open the property sheet if you unplug the adapter. */
+		ShellExecuteW(NULL, L"properties", cswNetworkAdapterPath, NULL, NULL, SW_SHOWNORMAL);
 	}
 
-	ILFree(lpConnFolderPIDL);
-
-	if (pShfConn == nullptr)
-		return FALSE;
-
-	pShfConn->EnumObjects(NULL, SHCONTF_NONFOLDERS, &pEnum);
-
-	while (pEnum->Next(1, &lpConnItemPIDL, NULL) == S_OK)
-	{
-		PNETCONIDSTRUCT nfid = reinterpret_cast<PNETCONIDSTRUCT>(lpConnItemPIDL);
-		if (!IsEqualGUID(gWlanAdapter, nfid->guidId))
-			ILFree(lpConnItemPIDL);
-		else
-			break;
-	}
-
-	CComPtr<IContextMenu> pcm;
-	if (SUCCEEDED(pShfConn->GetUIObjectOf(NULL, 1, const_cast<LPCITEMIDLIST*>(&lpConnItemPIDL), IID_IContextMenu, NULL, reinterpret_cast<PVOID*>(&pcm.p))))
-	{
-		CMINVOKECOMMANDINFO ici = { sizeof(ici) };
-		ici.hwnd = NULL;
-		ici.cbSize = sizeof(ici);
-		ici.nShow = SW_SHOW;
-		ici.lpVerb = "properties";
-		pcm->InvokeCommand(&ici);
-		pcm.Release();
-	};
-
-	ILFree(lpConnItemPIDL);
-	pShfConn.Release();
-
-	/* Below you can find a rather horrible HACK. */
 	this->ShowWindow(SW_HIDE);
-	this->SendMessageW(WM_CLOSE, NULL, NULL);
+	this->SendMessageW(WM_CLOSE);
 
 	return FALSE;
 }
