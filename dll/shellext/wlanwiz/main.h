@@ -18,18 +18,15 @@
 #include <shlwapi.h>
 #include <wlanapi.h>
 #include <vssym32.h>
-
 #ifdef __REACTOS__
 #include <cguid.h>
-#include <CommCtrl.h>
 #include <shellapi.h>
 #include <windef.h>
 #include <winbase.h>
 #include <winuser.h>
 #include <wingdi.h>
 #endif
-
-#include <Uxtheme.h>
+#include <uxtheme.h>
 
 #include "resource.h"
 
