@@ -319,7 +319,7 @@ LRESULT CWlanWizard::OnListBox(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& b
         cwLB.SendMessageW(LB_SETITEMHEIGHT, this->dwSelectedItemID, 56);
         cwLB.SendMessageW(LB_SETITEMHEIGHT, dwItemID, 136);
         
-        this->dwSelectedItemID = dwItemID;
+        this->dwSelectedItemID = static_cast<DWORD>(dwItemID);
         
         cwLB.Invalidate(FALSE);
         cwLB.UpdateWindow();

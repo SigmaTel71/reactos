@@ -22,7 +22,7 @@
 #ifdef __REACTOS__
 #include <cguid.h>
 #include <CommCtrl.h>
-#include <undocshell.h>
+#include <shellapi.h>
 #include <windef.h>
 #include <winbase.h>
 #include <winuser.h>
@@ -40,19 +40,6 @@ enum WLAN_SCAN_STATES
 	STATUS_SCAN_COMPLETE,
 	STATUS_SCANNING,
 };
-
-typedef struct tagNETCONIDSTRUCT
-{
-	WORD             Signature;
-	BYTE             Unknown[8];
-	CLSID            clsidThisObject;
-	GUID             guidId;
-	DWORD            dwCharacter;
-	ULONG            MediaType;
-	ULONG            Status;
-	ULONG            uNameOffset;
-	ULONG            uDeviceNameOffset;
-} NETCONIDSTRUCT, *PNETCONIDSTRUCT;
 
 static struct ExplorerInstance : public IUnknown
 {
