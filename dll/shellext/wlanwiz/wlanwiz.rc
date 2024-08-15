@@ -35,6 +35,7 @@ IDI_WLANWIZ_ADVANCED_SETTINGS ICON "res/advanced_settings.ico"
 /* UTF-8 */
 #pragma code_page(65001)
 
+/*
 #ifdef LANGUAGE_BG_BG
     #include "lang/bg-BG.rc"
 #endif
@@ -50,9 +51,11 @@ IDI_WLANWIZ_ADVANCED_SETTINGS ICON "res/advanced_settings.ico"
 #ifdef LANGUAGE_EL_GR
     #include "lang/el-GR.rc"
 #endif
+*/
 #ifdef LANGUAGE_EN_US
     #include "lang/en-US.rc"
 #endif
+/*
 #ifdef LANGUAGE_ES_ES
     #include "lang/es-ES.rc"
 #endif
@@ -92,9 +95,11 @@ IDI_WLANWIZ_ADVANCED_SETTINGS ICON "res/advanced_settings.ico"
 #ifdef LANGUAGE_RO_RO
     #include "lang/ro-RO.rc"
 #endif
+*/
 #ifdef LANGUAGE_RU_RU
     #include "lang/ru-RU.rc"
 #endif
+/*
 #ifdef LANGUAGE_SK_SK
     #include "lang/sk-SK.rc"
 #endif
@@ -119,3 +124,4 @@ IDI_WLANWIZ_ADVANCED_SETTINGS ICON "res/advanced_settings.ico"
 #ifdef LANGUAGE_ZH_TW
     #include "lang/zh-TW.rc"
 #endif
+*/
