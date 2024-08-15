@@ -7,12 +7,12 @@ spec2def(wlanwiz.dll wlanwiz.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
     wlanwiz.cpp
-    wlanwiz_advsettings.cpp
-    wlanwiz_draw.cpp
-    wlanwiz_keyb.cpp
-    wlanwiz_scan.cpp
-    wlanwiz_subclassproc_lb.cpp
-    wlanwiz_subclassproc_btngb.cpp)
+    advsettings.cpp
+    draw.cpp
+    keyb.cpp
+    scan.cpp
+    subclassproc_lb.cpp
+    subclassproc_btngb.cpp)
 
 file(GLOB wlanwiz_rc_deps res/*.*)
 add_rc_deps(wlanwiz.rc ${wlanwiz_rc_deps})
