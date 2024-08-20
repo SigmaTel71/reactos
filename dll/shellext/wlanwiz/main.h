@@ -21,6 +21,7 @@
 #ifdef __REACTOS__
 #include <cguid.h>
 #include <shellapi.h>
+#include <shlguid_undoc.h>
 #include <windef.h>
 #include <winbase.h>
 #include <winuser.h>
