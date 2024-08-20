@@ -11,9 +11,11 @@ LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl
 {
 	ATL::CStringW cswNetworkAdapterPath = L"";
 	LPOLESTR lpwszNetConCLSID;
-
+#if (_WIN32_WINNT < _WIN32_WINNT_VISTA) || !defined(__REACTOS__)
 	HRESULT hr = StringFromIID(CLSID_NetworkConnections, &lpwszNetConCLSID);
-
+#else
+	HRESULT hr = StringFromIID(CLSID_ConnectionFolder, &lpwszNetConCLSID);
+#endif
 	if (SUCCEEDED(hr))
 	{
 		cswNetworkAdapterPath.Format(L"::%s\\::%s", lpwszNetConCLSID, this->m_sGUID);
