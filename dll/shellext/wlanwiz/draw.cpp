@@ -13,8 +13,6 @@ LRESULT CWlanWizard::OnMeasureItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL
     {
         case IDC_WLANWIZ_LISTBOX:
             pmis->itemHeight = 56;
-            if (m_ListboxWLAN.SendMessageW(LB_GETCURSEL) == static_cast<LRESULT>(this->dwSelectedItemID))
-                pmis->itemHeight = 136;
             bHandled = TRUE;
             break;
     }
