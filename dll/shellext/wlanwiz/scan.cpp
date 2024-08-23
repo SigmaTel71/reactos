@@ -64,24 +64,39 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
         m_ListboxWLAN.GetClientRect(&rc);
 
         /* Add discovered networks to listbox and sort networks by signal level */
-        std::vector<std::pair<UINT, UINT>> vIndexToSignalQuality;
+        ATL::CAtlList<ATL::CSimpleArray<UINT>> calIndexToSignalQuality;
+
         for (;
             this->lstWlanNetworks->dwIndex <= this->lstWlanNetworks->dwNumberOfItems - 1;
             this->lstWlanNetworks->dwIndex++)
         {
-            vIndexToSignalQuality.push_back(std::make_pair(this->lstWlanNetworks->Network[this->lstWlanNetworks->dwIndex].wlanSignalQuality,
-                this->lstWlanNetworks->dwIndex));
+            ATL::CSimpleArray<UINT> csaIndexAndQuality;
+            csaIndexAndQuality.Add(this->lstWlanNetworks->Network[this->lstWlanNetworks->dwIndex].wlanSignalQuality);
+            csaIndexAndQuality.Add(this->lstWlanNetworks->dwIndex);
+
+            calIndexToSignalQuality.AddTail(csaIndexAndQuality);
         }
 
-        std::sort(vIndexToSignalQuality.begin(), vIndexToSignalQuality.end(), [](std::pair<UINT, UINT> left, std::pair<UINT, UINT> right)
-            {
-                return left.first > right.first;
-            });
-
-        for (auto& pNetSorted : vIndexToSignalQuality)
+        for (UINT i = 0; i < calIndexToSignalQuality.GetCount(); ++i)
         {
+            for (UINT i = 0; i < calIndexToSignalQuality.GetCount() - 1; ++i)
+            {
+                auto left = calIndexToSignalQuality.GetAt(calIndexToSignalQuality.FindIndex(i));
+                auto right = calIndexToSignalQuality.GetAt(calIndexToSignalQuality.FindIndex(i + 1));
+
+                if (left[0] < right[0])
+                    calIndexToSignalQuality.SwapElements(calIndexToSignalQuality.FindIndex(i), calIndexToSignalQuality.FindIndex(i + 1));
+            }
+        }
+
+        POSITION posIAQ = calIndexToSignalQuality.GetHeadPosition();
+
+        while (posIAQ != NULL)
+        {
+            auto csaIAQ = calIndexToSignalQuality.GetNext(posIAQ);
+
             ATL::CStringW cswWlanNetworkName = "";
-            cswWlanNetworkName = CA2W(reinterpret_cast<LPCSTR>(this->lstWlanNetworks->Network[pNetSorted.second].dot11Ssid.ucSSID), CP_ACP);
+            cswWlanNetworkName = CA2W(reinterpret_cast<LPCSTR>(this->lstWlanNetworks->Network[csaIAQ[1]].dot11Ssid.ucSSID), CP_ACP);
 
             if (cswWlanNetworkName.IsEmpty())
                 cswWlanNetworkName.LoadStringW(IDS_WLANWIZ_HIDDEN_NETWORK);
@@ -92,7 +107,7 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
 
             m_ListboxWLAN.SendMessageW(LB_SETITEMDATA,
                 iItemIdx,
-                static_cast<LPARAM>(pNetSorted.second));
+                static_cast<LPARAM>(csaIAQ[1]));
         }
     }
 
