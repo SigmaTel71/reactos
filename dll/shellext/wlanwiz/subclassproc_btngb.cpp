@@ -13,14 +13,14 @@ LRESULT CWlanWizard::OnEraseBkgndGroupBoxBtns(UINT nMsg, WPARAM wParam, LPARAM l
 
 LRESULT CWlanWizard::OnPaintGroupBox(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    std::vector<int> vCtrlID = { IDC_WLANWIZ_MAINGROUP, IDC_WLANWIZ_RELATEDGROUP };
+    int ctrlIDs[2] = { IDC_WLANWIZ_MAINGROUP, IDC_WLANWIZ_RELATEDGROUP };
 
-    for (const auto& ctlID : vCtrlID)
+    for (UINT i = 0; i < _countof(ctrlIDs); ++i)
     {
         PAINTSTRUCT ps = { 0 };
         RECT rc = { 0 };
 
-        ATL::CWindow hWnd = GetDlgItem(ctlID);
+        ATL::CWindow hWnd = GetDlgItem(ctrlIDs[i]);
 
         HDC hDCMain = hWnd.BeginPaint(&ps);
         HDC hDCMem = CreateCompatibleDC(hDCMain);
@@ -71,7 +71,7 @@ LRESULT CWlanWizard::OnPaintGroupBox(UINT nMsg, WPARAM wParam, LPARAM lParam, BO
             /* Draw classic GroupBox borders */
             FillRect(hDCMem, &rc, reinterpret_cast<HBRUSH>(GetStockObject(COLOR_3DFACE + 1)));
             
-            switch (ctlID)
+            switch (ctrlIDs[i])
             {
                 case IDC_WLANWIZ_MAINGROUP:
                     m_SidebarGroupMain.DefWindowProcW(nMsg, reinterpret_cast<WPARAM>(hDCMem), lParam);

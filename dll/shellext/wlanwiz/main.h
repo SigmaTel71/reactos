@@ -6,8 +6,6 @@
  */
 
 #pragma once
-#include <vector>
-
 #include <atlbase.h>
 #include <atlcoll.h>
 #include <atlconv.h>
@@ -19,6 +17,7 @@
 #include <wlanapi.h>
 #include <vssym32.h>
 #ifdef __REACTOS__
+#include <atlsimpcoll.h>
 #include <cguid.h>
 #include <shellapi.h>
 #include <shlguid_undoc.h>
