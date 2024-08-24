@@ -135,7 +135,7 @@ BOOL CWlanWizard::FindWlanDevice(ATL::CString sGUID)
         /* We expect to see netshell opening WLAN dialog window for networks discovered by device with GUID it got. */
         for (DWORD i = 0; i <= this->lstWlanInterfaces->dwNumberOfItems; i++)
         {
-            if (IsEqualGUID(gWlanDeviceID, this->lstWlanInterfaces[i].InterfaceInfo->InterfaceGuid))
+            if (IsEqualGUID(gWlanDeviceID, this->lstWlanInterfaces->InterfaceInfo[i].InterfaceGuid))
             {
                 StringFromIID(gWlanDeviceID, &this->m_sGUID);
                 return TRUE;
@@ -150,7 +150,7 @@ BOOL CWlanWizard::FindWlanDevice(ATL::CString sGUID)
         BOOL bWlanDevicePresent = this->lstWlanInterfaces->dwNumberOfItems > 0;
         
         if (bWlanDevicePresent)
-            dwResult = StringFromIID(this->lstWlanInterfaces[0].InterfaceInfo->InterfaceGuid, &this->m_sGUID);
+            dwResult = StringFromIID(this->lstWlanInterfaces->InterfaceInfo[0].InterfaceGuid, &this->m_sGUID);
 
         return bWlanDevicePresent;
     }
