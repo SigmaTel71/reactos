@@ -119,10 +119,12 @@ DWORD WINAPI CWlanWizard::ScanNetworksThread(_In_ LPVOID lpParameter)
 {
     GUID gWlanDeviceID = { 0 };
     CWlanWizard* cwwThis = reinterpret_cast<CWlanWizard*>(lpParameter);
-    IIDFromString(cwwThis->m_sGUID, &gWlanDeviceID);
-
-    WlanScan(cwwThis->hWlanClient, &gWlanDeviceID, NULL, NULL, NULL);
-    WlanGetAvailableNetworkList(cwwThis->hWlanClient, &gWlanDeviceID, 1, NULL, &cwwThis->lstWlanNetworks);
+    
+    if (IIDFromString(cwwThis->m_sGUID, &gWlanDeviceID) == S_OK)
+    {
+        WlanScan(cwwThis->hWlanClient, &gWlanDeviceID, NULL, NULL, NULL);
+        WlanGetAvailableNetworkList(cwwThis->hWlanClient, &gWlanDeviceID, 1, NULL, &cwwThis->lstWlanNetworks);
+    }
 
     return FALSE;
 }
