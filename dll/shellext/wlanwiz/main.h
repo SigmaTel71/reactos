@@ -163,7 +163,6 @@ private:
 	WPARAM wPrevCtlID = 0;
 
 	/* Listbox specific variables */
-	BOOL bSelectedForInvalidate = FALSE;
 	DWORD dwSelectedItemID = 0;
 
 	HWND CreateToolTip(int toolID);
