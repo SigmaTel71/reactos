@@ -14,7 +14,6 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
     this->uScanStatus = STATUS_SCANNING;
     this->bScanTimeout = FALSE;
     this->dwSelectedItemID = -1;
-    this->bSelectedForInvalidate = TRUE;
 
     m_SidebarButtonAS.EnableWindow(FALSE);
     m_SidebarButtonSN.EnableWindow(FALSE);
@@ -23,7 +22,7 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
 
     /* Clear listbox from previously discovered networks */
     m_ListboxWLAN.SendMessageW(LB_RESETCONTENT, NULL, NULL);
-    m_ListboxWLAN.RedrawWindow(NULL, NULL, RDW_ERASENOW | RDW_ERASE | RDW_INVALIDATE);
+    m_ListboxWLAN.Invalidate();
 
     SetTimer(IDT_SCANNING_NETWORKS, 5000);
 
@@ -110,7 +109,7 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
         }
     }
 
-    m_ListboxWLAN.RedrawWindow(NULL, NULL, RDW_ERASENOW | RDW_ERASE | RDW_INVALIDATE);
+    m_ListboxWLAN.Invalidate();
     m_ListboxWLAN.SetFocus();
 
     return FALSE;
