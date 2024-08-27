@@ -151,6 +151,8 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 UINT uSSIDLength = static_cast<UINT>(SendDlgItemMessageW(pdis->CtlID, LB_GETTEXTLEN, pdis->itemID, NULL));
                 UINT uItemRealID = static_cast<UINT>(SendDlgItemMessageW(pdis->CtlID, LB_GETITEMDATA, pdis->itemID, NULL));
 
+                WLAN_AVAILABLE_NETWORK wlanNetwork = this->lstWlanNetworks->Network[uItemRealID];
+
                 cswWindowText.Empty();
                 cswWindowText.Preallocate(uSSIDLength);
 
@@ -207,17 +209,44 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                     DeleteObject(hbrSelectedBg);
                 }
 
-                crItemText = SetTextColor(pdis->hDC, GetSysColor(pdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT));
-                TextOutW(pdis->hDC, 4, pdis->rcItem.top + 4, cswWindowText, cswWindowText.GetLength());
-                SetTextColor(pdis->hDC, crItemText);
+                if (wlanNetwork.bSecurityEnabled)
+                {
+                    DrawIconEx(pdis->hDC,
+                        4,
+                        pdis->rcItem.top + 36,
+                        LoadIconW(GetModuleHandleW(L"shell32.dll"), MAKEINTRESOURCEW(48)), /* lock icon */
+                        16,
+                        16,
+                        NULL,
+                        NULL,
+                        DI_NORMAL);
+                }
 
+                crItemText = SetTextColor(pdis->hDC, GetSysColor(pdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT));
+                TextOutW(pdis->hDC, 4, pdis->rcItem.top + 4, cswWindowText, cswWindowText.GetLength()); /* SSID */
+                this->lfCaption.lfWeight = FW_NORMAL;
+                
                 SelectObject(pdis->hDC, hOld);
                 DeleteObject(hfCaption);
 
-                this->lfCaption.lfWeight = FW_NORMAL;
+                /* Is network password-protected? */
+                ATL::CStringW cswNetworkSecurity = L"";
+
+                if (wlanNetwork.dot11BssType == dot11_BSS_type_infrastructure)
+                    cswNetworkSecurity.LoadStringW(wlanNetwork.bSecurityEnabled ? IDS_WLANWIZ_ENCRYPTED_AP : IDS_WLANWIZ_UNENCRYPTED_AP);
+                else if (wlanNetwork.dot11BssType == dot11_BSS_type_independent)
+                    cswNetworkSecurity.LoadStringW(wlanNetwork.bSecurityEnabled ? IDS_WLANWIZ_ENCRYPTED_IBSS : IDS_WLANWIZ_UNENCRYPTED_IBSS);
+                
+                TextOutW(pdis->hDC,
+                        wlanNetwork.bSecurityEnabled ? 24 : 16,
+                        pdis->rcItem.top + 38,
+                        cswNetworkSecurity, cswNetworkSecurity.GetLength());
+
+                SetTextColor(pdis->hDC, crItemText);
+
 
                 /* Choose signal level icon depending on signal strength */
-                UINT uRSSI = this->lstWlanNetworks->Network[uItemRealID].wlanSignalQuality;
+                UINT uRSSI = wlanNetwork.wlanSignalQuality;
                 int iRSSIResIcon = IDI_WLANICON;
 
                 if (16 <= uRSSI && uRSSI < 36)
@@ -248,6 +277,7 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 pdis->rcItem.bottom -= 1;
             }
 
+            /* FIXME: The focus rectangle is not drawn inside listbox */
             if (pdis->itemState & ODS_FOCUS)
                 DrawFocusRect(pdis->hDC, &pdis->rcItem);
 
