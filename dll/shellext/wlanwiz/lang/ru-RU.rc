@@ -39,6 +39,8 @@ BEGIN
     IDS_WLANWIZ_CONNECTED_MANU      "вручную"
     IDS_WLANWIZ_ENCRYPTED_AP        "Защищённая беспроводная сеть"
     IDS_WLANWIZ_UNENCRYPTED_AP      "Незащищённая беспроводная сеть"
+    IDS_WLANWIZ_ENCRYPTED_IBSS      "Защищённая сеть «компьютер-компьютер»"
+    IDS_WLANWIZ_UNENCRYPTED_IBSS    "Незащищённая сеть «компьютер-компьютер»"
     IDS_WLANWIZ_NO_APS_DISCOVERED   "Беспроводные сети в радиусе действия не обнаружены.\n\nУбедитесь, что выключатель беспроводной сети включен.\nДля повторного сканирования нажмите кнопку «Обновить список сетей»."
     IDS_WLANWIZ_SCANNING_NETWORKS   "Выполняется поиск беспроводных сетей в радиусе действия..."
     IDS_WLANWIZ_HIDDEN_NETWORK      "Скрытая сеть"
