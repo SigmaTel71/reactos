@@ -62,7 +62,7 @@ LRESULT CWlanWizard::OnVKeyToItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL&
 
         case VK_TAB:
         {
-            ATL::CWindow hDlgItem = GetNextDlgTabItem(GetParent(), GetKeyState(VK_SHIFT));
+            ATL::CWindow hDlgItem = GetNextDlgTabItem(m_ListboxWLAN, GetAsyncKeyState(VK_SHIFT) & 0x01);
             hDlgItem.SetFocus();
             return -2;
         }
