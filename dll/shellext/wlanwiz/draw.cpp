@@ -212,7 +212,7 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 if (wlanNetwork.bSecurityEnabled)
                 {
                     DrawIconEx(pdis->hDC,
-                        4,
+                        52,
                         pdis->rcItem.top + 36,
                         LoadIconW(GetModuleHandleW(L"shell32.dll"), MAKEINTRESOURCEW(48)), /* lock icon */
                         16,
@@ -223,7 +223,7 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 }
 
                 crItemText = SetTextColor(pdis->hDC, GetSysColor(pdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT));
-                TextOutW(pdis->hDC, 4, pdis->rcItem.top + 4, cswWindowText, cswWindowText.GetLength()); /* SSID */
+                TextOutW(pdis->hDC, 52, pdis->rcItem.top + 4, cswWindowText, cswWindowText.GetLength()); /* SSID */
                 this->lfCaption.lfWeight = FW_NORMAL;
                 
                 SelectObject(pdis->hDC, hOld);
@@ -232,13 +232,14 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 /* Is network password-protected? */
                 ATL::CStringW cswNetworkSecurity = L"";
 
+
                 if (wlanNetwork.dot11BssType == dot11_BSS_type_infrastructure)
                     cswNetworkSecurity.LoadStringW(wlanNetwork.bSecurityEnabled ? IDS_WLANWIZ_ENCRYPTED_AP : IDS_WLANWIZ_UNENCRYPTED_AP);
                 else if (wlanNetwork.dot11BssType == dot11_BSS_type_independent)
                     cswNetworkSecurity.LoadStringW(wlanNetwork.bSecurityEnabled ? IDS_WLANWIZ_ENCRYPTED_IBSS : IDS_WLANWIZ_UNENCRYPTED_IBSS);
                 
                 TextOutW(pdis->hDC,
-                        wlanNetwork.bSecurityEnabled ? 24 : 16,
+                        wlanNetwork.bSecurityEnabled ? 72 : 64,
                         pdis->rcItem.top + 38,
                         cswNetworkSecurity, cswNetworkSecurity.GetLength());
 
@@ -260,15 +261,39 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 else if (uRSSI >= 96)
                     iRSSIResIcon = IDI_WLANICON_100;
 
+                HICON hicnRes = LoadIconW(wlanwiz_hInstance, MAKEINTRESOURCEW(iRSSIResIcon));
+
                 DrawIconEx(pdis->hDC,
                            pdis->rcItem.right - 36,
                            pdis->rcItem.top + 24,
-                           LoadIconW(wlanwiz_hInstance, MAKEINTRESOURCEW(iRSSIResIcon)),
+                           hicnRes,
                            32,
                            32,
                            NULL,
                            NULL,
                            DI_NORMAL);
+
+                DestroyIcon(hicnRes);
+
+                int iBSSIcon = IDI_BSS_INFRA;
+
+                if (wlanNetwork.dot11BssType == dot11_BSS_type_independent)
+                    iBSSIcon = IDI_BSS_ADHOC;
+
+                /* LoadImageW refuses to load 48px icon properly */
+                hicnRes = static_cast<HICON>(LoadImageW(wlanwiz_hInstance, MAKEINTRESOURCEW(iBSSIcon), IMAGE_ICON, 48, 48, LR_LOADTRANSPARENT));
+
+                DrawIconEx(pdis->hDC,
+                    pdis->rcItem.left + 2,
+                    pdis->rcItem.top + 3,
+                    hicnRes,
+                    48,
+                    48,
+                    NULL,
+                    NULL,
+                    DI_NORMAL);
+
+                DestroyIcon(hicnRes);
 
                 /* Shrink focus rectangle for listbox items */
                 pdis->rcItem.left += 1;
