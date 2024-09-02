@@ -25,6 +25,9 @@ IDI_AP_UNAVAILABLE ICON "res/ap_unavail.ico"
 IDI_AP_CONNECTING ICON "res/ap_conn.ico"
 IDI_AP_DHCP_FAILED ICON "res/dhcp_fail.ico"
 
+IDI_BSS_INFRA ICON "res/bss_infra.ico"
+IDI_BSS_ADHOC ICON "res/bss_adhoc.ico"
+
 IDI_WLANWIZ_SCAN_NETWORKS ICON "res/refresh.ico"
 IDI_WLANWIZ_INSTALL_WLAN ICON "res/wlanwiz.ico"
 IDI_WLANWIZ_PREFERRED_APS ICON "res/favorite.ico"
