@@ -18,6 +18,9 @@
 #define IDI_AP_CONNECTING   110
 #define IDI_AP_DHCP_FAILED  111
 
+#define IDI_BSS_INFRA		112
+#define IDI_BSS_ADHOC		113
+
 /* Dialog resources */
 #define IDD_WLANWIZ_DIALOG              400
 #define IDD_WLANWIZ_CHOOSE_NET_TITLE    401
