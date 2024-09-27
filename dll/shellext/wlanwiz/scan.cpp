@@ -7,6 +7,22 @@
 
 #include "main.h"
 
+/* TODO: Insertion sort, maybe? Or come back to STL sort, gladly C++20 is here to help */
+void CWlanWizard::SortScannedNetworks(ATL::CAtlList<ATL::CSimpleArray<UINT>>& calcsa)
+{
+    for (UINT i = 0; i < calcsa.GetCount(); ++i)
+    {
+        for (UINT i = 0; i < calcsa.GetCount() - 1; ++i)
+        {
+            auto left = calcsa.GetAt(calcsa.FindIndex(i));
+            auto right = calcsa.GetAt(calcsa.FindIndex(i + 1));
+
+            if (left[0] < right[0])
+                calcsa.SwapElements(calcsa.FindIndex(i), calcsa.FindIndex(i + 1));
+        }
+    }
+}
+
 LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
 {
     MSG msg;
@@ -62,30 +78,28 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
         m_ListboxWLAN.GetClientRect(&rc);
 
         /* Add discovered networks to listbox and sort networks by signal level */
-        ATL::CAtlList<ATL::CSimpleArray<UINT>> calIndexToSignalQuality;
+        ATL::CAtlList<ATL::CSimpleArray<UINT>> calIndexToSignalQuality, calIndexToSignalQualityAdHoc;
 
         for (;
             this->lstWlanNetworks->dwIndex <= this->lstWlanNetworks->dwNumberOfItems - 1;
             this->lstWlanNetworks->dwIndex++)
         {
             ATL::CSimpleArray<UINT> csaIndexAndQuality;
-            csaIndexAndQuality.Add(this->lstWlanNetworks->Network[this->lstWlanNetworks->dwIndex].wlanSignalQuality);
+            WLAN_AVAILABLE_NETWORK wlanNetwork = this->lstWlanNetworks->Network[this->lstWlanNetworks->dwIndex];
+            csaIndexAndQuality.Add(wlanNetwork.wlanSignalQuality);
             csaIndexAndQuality.Add(this->lstWlanNetworks->dwIndex);
 
-            calIndexToSignalQuality.AddTail(csaIndexAndQuality);
+            if (wlanNetwork.dot11BssType == dot11_BSS_type_infrastructure)
+                calIndexToSignalQuality.AddTail(csaIndexAndQuality);
+            else if (wlanNetwork.dot11BssType == dot11_BSS_type_independent)
+                calIndexToSignalQualityAdHoc.AddTail(csaIndexAndQuality);
         }
 
-        for (UINT i = 0; i < calIndexToSignalQuality.GetCount(); ++i)
-        {
-            for (UINT i = 0; i < calIndexToSignalQuality.GetCount() - 1; ++i)
-            {
-                auto left = calIndexToSignalQuality.GetAt(calIndexToSignalQuality.FindIndex(i));
-                auto right = calIndexToSignalQuality.GetAt(calIndexToSignalQuality.FindIndex(i + 1));
+        SortScannedNetworks(calIndexToSignalQuality);
+        SortScannedNetworks(calIndexToSignalQualityAdHoc);
 
-                if (left[0] < right[0])
-                    calIndexToSignalQuality.SwapElements(calIndexToSignalQuality.FindIndex(i), calIndexToSignalQuality.FindIndex(i + 1));
-            }
-        }
+        /* Ad hoc networks are shown last */
+        calIndexToSignalQuality.AddTailList(&calIndexToSignalQualityAdHoc);
 
         POSITION posIAQ = calIndexToSignalQuality.GetHeadPosition();
 
@@ -94,10 +108,12 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
             auto csaIAQ = calIndexToSignalQuality.GetNext(posIAQ);
 
             ATL::CStringW cswWlanNetworkName = "";
-            cswWlanNetworkName = CA2W(reinterpret_cast<LPCSTR>(this->lstWlanNetworks->Network[csaIAQ[1]].dot11Ssid.ucSSID), CP_ACP);
-
+            cswWlanNetworkName = CA2W(reinterpret_cast<LPCSTR>(this->lstWlanNetworks->Network[csaIAQ[1]].dot11Ssid.ucSSID));
+            
             if (cswWlanNetworkName.IsEmpty())
                 cswWlanNetworkName.LoadStringW(IDS_WLANWIZ_HIDDEN_NETWORK);
+            else
+                cswWlanNetworkName = cswWlanNetworkName.Left(DOT11_SSID_MAX_LENGTH);
 
             LRESULT iItemIdx = m_ListboxWLAN.SendMessageW(LB_ADDSTRING,
                 NULL,
@@ -123,7 +139,7 @@ DWORD WINAPI CWlanWizard::ScanNetworksThread(_In_ LPVOID lpParameter)
     if (IIDFromString(cwwThis->m_sGUID, &gWlanDeviceID) == S_OK)
     {
         WlanScan(cwwThis->hWlanClient, &gWlanDeviceID, NULL, NULL, NULL);
-        WlanGetAvailableNetworkList(cwwThis->hWlanClient, &gWlanDeviceID, 1, NULL, &cwwThis->lstWlanNetworks);
+        WlanGetAvailableNetworkList(cwwThis->hWlanClient, &gWlanDeviceID, 0, NULL, &cwwThis->lstWlanNetworks);
     }
 
     return FALSE;

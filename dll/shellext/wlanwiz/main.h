@@ -46,7 +46,7 @@ static struct ExplorerInstance : public IUnknown
 	ExplorerInstance() : m_hWnd(NULL), m_rc(1) {}
 	virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv)
 	{
-		static const QITAB rgqit[] = { { 0 } };
+		const QITAB rgqit[] = { { 0 } };
 		return QISearch(this, rgqit, riid, ppv);
 	}
 	virtual ULONG STDMETHODCALLTYPE AddRef()
@@ -167,6 +167,7 @@ private:
 
 	HWND CreateToolTip(int toolID);
 	static DWORD WINAPI ScanNetworksThread(_In_ LPVOID lpParameter);
+	void SortScannedNetworks(ATL::CAtlList<ATL::CSimpleArray<UINT>>& calcsa);
 
 	LRESULT OnInitDialog(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
