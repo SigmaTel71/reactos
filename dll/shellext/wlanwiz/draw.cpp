@@ -172,7 +172,19 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                     COLORREF cr3dFace = 0;
                     COLORREF crWnd = 0;
                     GRADIENT_RECT gRect = { 0, 1 };
-                    TRIVERTEX tvRect[2] = { 0 };
+                    TRIVERTEX tvRect[2] =
+                    { 
+                        {
+                            .x = pdis->rcItem.right,
+                            .y = pdis->rcItem.bottom,
+                            .Alpha = 0x0000,
+                        },
+                        {
+                            .x = pdis->rcItem.left,
+                            .y = pdis->rcItem.top,
+                            .Alpha = 0x0000
+                        }
+                    };
 
                     if (this->hThemeEB)
                     {
@@ -184,20 +196,14 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                         cr3dFace = GetSysColor(COLOR_3DFACE);
                         crWnd = GetSysColor(COLOR_WINDOW);
                     }
-            
-                    tvRect[0].x     = pdis->rcItem.right;
-                    tvRect[0].y     = pdis->rcItem.bottom;
+
                     tvRect[0].Red   = GetRValue(cr3dFace) << 8;
                     tvRect[0].Green = GetGValue(cr3dFace) << 8;
                     tvRect[0].Blue  = GetBValue(cr3dFace) << 8;
-                    tvRect[0].Alpha = 0x0000;
 
-                    tvRect[1].x     = pdis->rcItem.left;
-                    tvRect[1].y     = pdis->rcItem.top;
                     tvRect[1].Red   = GetRValue(crWnd) << 8;
                     tvRect[1].Green = GetGValue(crWnd) << 8;
                     tvRect[1].Blue  = GetBValue(crWnd) << 8;
-                    tvRect[1].Alpha = 0x0000;
 
                     GradientFill(pdis->hDC, tvRect, 2, &gRect, 1, GRADIENT_FILL_RECT_V);
                 }
@@ -232,11 +238,51 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 /* Is network password-protected? */
                 ATL::CStringW cswNetworkSecurity = L"";
 
-
                 if (wlanNetwork.dot11BssType == dot11_BSS_type_infrastructure)
+                {
                     cswNetworkSecurity.LoadStringW(wlanNetwork.bSecurityEnabled ? IDS_WLANWIZ_ENCRYPTED_AP : IDS_WLANWIZ_UNENCRYPTED_AP);
+                    if (wlanNetwork.bSecurityEnabled)
+                    {
+                        switch (wlanNetwork.dot11DefaultAuthAlgorithm)
+                        {
+                        case DOT11_AUTH_ALGO_WPA:
+                        case DOT11_AUTH_ALGO_WPA_PSK:
+                            cswNetworkSecurity += L" (WPA)";
+                            break;
+                        case DOT11_AUTH_ALGO_RSNA:
+                        case DOT11_AUTH_ALGO_RSNA_PSK:
+                            cswNetworkSecurity += L" (WPA2)";
+                            break;
+#ifndef __REACTOS__ /* uncomment when will be implemented */
+                        case DOT11_AUTH_ALGO_WPA3:
+                        case DOT11_AUTH_ALGO_WPA3_SAE:
+                        case DOT11_AUTH_ALGO_WPA3_ENT:
+                            cswNetworkSecurity += L" (WPA3)";
+                            break;
+#endif
+                        default:
+                            break;
+                        }
+                    }
+                }
                 else if (wlanNetwork.dot11BssType == dot11_BSS_type_independent)
+                {
                     cswNetworkSecurity.LoadStringW(wlanNetwork.bSecurityEnabled ? IDS_WLANWIZ_ENCRYPTED_IBSS : IDS_WLANWIZ_UNENCRYPTED_IBSS);
+                    if (wlanNetwork.bSecurityEnabled)
+                    {
+                        switch (wlanNetwork.dot11DefaultAuthAlgorithm)
+                        {
+                        case DOT11_AUTH_ALGO_80211_SHARED_KEY:
+                            cswNetworkSecurity += L" (WEP)";
+                            break;
+                        case DOT11_AUTH_ALGO_RSNA_PSK: /* Possible as of NT 6.0 */
+                            cswNetworkSecurity += L" (WPA2)";
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                }
                 
                 TextOutW(pdis->hDC,
                         wlanNetwork.bSecurityEnabled ? 72 : 64,
@@ -244,7 +290,6 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                         cswNetworkSecurity, cswNetworkSecurity.GetLength());
 
                 SetTextColor(pdis->hDC, crItemText);
-
 
                 /* Choose signal level icon depending on signal strength */
                 UINT uRSSI = wlanNetwork.wlanSignalQuality;
