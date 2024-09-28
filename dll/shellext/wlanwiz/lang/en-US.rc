@@ -45,6 +45,11 @@ BEGIN
     IDS_WLANWIZ_SCANNING_NETWORKS   "Searching for wireless networks in range..."
     IDS_WLANWIZ_HIDDEN_NETWORK      "Hidden network"
 
+    IDS_WLANWIZ_EXPAND_UNENCRYPTED        "This network is configured for open access and information sent over may be visible to others. If you want to connect to this network, click Connect."
+    IDS_WLANWIZ_EXPAND_ENCRYPTED          "To connect to this network, click Connect and follow further instructions."
+    IDS_WLANWIZ_EXPAND_ENCRYPTED_OBSOLETE "This network uses and older security standard that might not provide sufficient protection for information sent over. If you want to connect to this network, click Connect."
+    IDS_WLANWIZ_EXPAND_CONNECTED          "You are currently connected to this network. To disconnect from this network, click Disconnect."
+
     /* Sidebar button tooltips */
     IDS_WLANWIZ_SCAN_NETWORKS_TT        "Search for wireless networks"
     IDS_WLANWIZ_INSTALL_WLAN_TT         "Start a wizard to setup your wireless network"
