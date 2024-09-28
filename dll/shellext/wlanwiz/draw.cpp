@@ -93,15 +93,23 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                  * The +20 offset originates from resource.h, the IDs are laid out in a way
                  * they can be safely batch processed in loops, as the range is fixed. */
                 if (wParam >= IDC_WLANWIZ_SCAN_NETWORKS && wParam <= IDC_WLANWIZ_ADVANCED_SETTINGS)
+                {
+                    HICON hSidebarIcon = NULL;
+
+                    wParam == IDC_WLANWIZ_PREFERRED_APS
+                        ? hSidebarIcon = LoadIconW(GetModuleHandleW(L"shell32.dll"), MAKEINTRESOURCE(44)) /* 'Favorites' icon */
+                        : hSidebarIcon = LoadIconW(wlanwiz_hInstance, MAKEINTRESOURCEW(wParam + 20));
+
                     DrawIconEx(this->hThemeEB ? hDCBtn : pdis->hDC,
                                pdis->rcItem.left + 2,
                                pdis->rcItem.top + 2,
-                               LoadIconW(wlanwiz_hInstance, MAKEINTRESOURCEW(wParam + 20)),
+                               hSidebarIcon,
                                16,
                                16,
                                NULL,
                                NULL,
                                DI_NORMAL);
+                }
 
                 /* Step 3: Draw button text */
                 HFONT hfBtnCaption = NULL;
