@@ -223,6 +223,7 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                     DeleteObject(hbrSelectedBg);
                 }
 
+                /* Draw security indicator */
                 if (wlanNetwork.bSecurityEnabled)
                 {
                     HICON hicnSecurity = LoadIconW(GetModuleHandleW(L"shell32.dll"), MAKEINTRESOURCEW(48)); /* lock icon */
@@ -294,6 +295,7 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                     {
                         switch (wlanNetwork.dot11DefaultAuthAlgorithm)
                         {
+                        case DOT11_AUTH_ALGO_80211_OPEN:
                         case DOT11_AUTH_ALGO_80211_SHARED_KEY:
                             cswNetworkSecurity += L" (WEP)";
                             break;
@@ -307,9 +309,39 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 }
                 
                 TextOutW(pdis->hDC,
-                        wlanNetwork.bSecurityEnabled ? 72 : 64,
+                        wlanNetwork.bSecurityEnabled ? 72 : 52,
                         pdis->rcItem.top + 38,
                         cswNetworkSecurity, cswNetworkSecurity.GetLength());
+
+                /* Draw expanded text if the network is selected */
+                if (pdis->itemState & ODS_SELECTED)
+                {
+                    ATL::CStringW cswExpandedText = L"";
+
+                    if (wlanNetwork.dwFlags & WLAN_AVAILABLE_NETWORK_CONNECTED)
+                        cswExpandedText.LoadStringW(IDS_WLANWIZ_CONNECTED);
+                    else
+                    {
+                        if (wlanNetwork.bSecurityEnabled)
+                        {
+                            wlanNetwork.dot11DefaultAuthAlgorithm < DOT11_AUTH_ALGO_WPA
+                                ? cswExpandedText.LoadStringW(IDS_WLANWIZ_EXPAND_ENCRYPTED_OBSOLETE)
+                                : cswExpandedText.LoadStringW(IDS_WLANWIZ_EXPAND_ENCRYPTED);
+                        }
+                        else
+                            cswExpandedText.LoadStringW(IDS_WLANWIZ_EXPAND_UNENCRYPTED);
+                    }
+
+                    RECT rcExpandedText =
+                    {
+                        .left = 52,
+                        .top = pdis->rcItem.top + 60,
+                        .right = pdis->rcItem.right - 4,
+                        .bottom = pdis->rcItem.bottom
+                    };
+
+                    DrawTextW(pdis->hDC, cswExpandedText, cswExpandedText.GetLength(), &rcExpandedText, DT_WORDBREAK | DT_LEFT);
+                }
 
                 SetTextColor(pdis->hDC, crItemText);
 
@@ -331,31 +363,28 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 HICON hicnRes = LoadIconW(wlanwiz_hInstance, MAKEINTRESOURCEW(iRSSIResIcon));
 
                 DrawIconEx(pdis->hDC,
-                           pdis->rcItem.right - 36,
-                           pdis->rcItem.top + 24,
+                           pdis->rcItem.right - 36, pdis->rcItem.top + 24,
                            hicnRes,
-                           32,
-                           32,
+                           32, 32,
                            NULL,
                            NULL,
                            DI_NORMAL);
 
                 DestroyIcon(hicnRes);
 
-                int iBSSIcon = IDI_BSS_INFRA;
+                int iBSSIcon = 0;
 
-                if (wlanNetwork.dot11BssType == dot11_BSS_type_independent)
-                    iBSSIcon = IDI_BSS_ADHOC;
+                wlanNetwork.dot11BssType == dot11_BSS_type_independent
+                    ? iBSSIcon = IDI_BSS_ADHOC
+                    : iBSSIcon = IDI_BSS_INFRA;
 
-                /* LoadImageW refuses to load 48px icon properly */
+                /* LoadIconW refuses to load 48px icon properly */
                 hicnRes = static_cast<HICON>(LoadImageW(wlanwiz_hInstance, MAKEINTRESOURCEW(iBSSIcon), IMAGE_ICON, 48, 48, LR_LOADTRANSPARENT));
 
                 DrawIconEx(pdis->hDC,
-                    pdis->rcItem.left + 2,
-                    pdis->rcItem.top + 3,
+                    pdis->rcItem.left + 2, pdis->rcItem.top + 3,
                     hicnRes,
-                    48,
-                    48,
+                    48, 48,
                     NULL,
                     NULL,
                     DI_NORMAL);
