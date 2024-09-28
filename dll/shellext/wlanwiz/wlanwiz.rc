@@ -30,7 +30,6 @@ IDI_BSS_ADHOC ICON "res/bss_adhoc.ico"
 
 IDI_WLANWIZ_SCAN_NETWORKS ICON "res/refresh.ico"
 IDI_WLANWIZ_INSTALL_WLAN ICON "res/wlanwiz.ico"
-IDI_WLANWIZ_PREFERRED_APS ICON "res/favorite.ico"
 IDI_WLANWIZ_ADVANCED_SETTINGS ICON "res/advanced_settings.ico"
 
 #include <reactos/manifest_hosted.rc>
