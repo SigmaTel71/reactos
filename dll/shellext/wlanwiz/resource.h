@@ -40,7 +40,6 @@
 /* Sidebar dialog controls icons */
 #define IDI_WLANWIZ_SCAN_NETWORKS		431
 #define IDI_WLANWIZ_INSTALL_WLAN		432
-#define IDI_WLANWIZ_PREFERRED_APS		441
 #define IDI_WLANWIZ_ADVANCED_SETTINGS	442
 
 /* Sidebar dialog controls toolip strings */
