@@ -225,15 +225,29 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
 
                 if (wlanNetwork.bSecurityEnabled)
                 {
+                    HICON hicnSecurity = LoadIconW(GetModuleHandleW(L"shell32.dll"), MAKEINTRESOURCEW(48)); /* lock icon */
+
                     DrawIconEx(pdis->hDC,
-                        52,
-                        pdis->rcItem.top + 36,
-                        LoadIconW(GetModuleHandleW(L"shell32.dll"), MAKEINTRESOURCEW(48)), /* lock icon */
-                        16,
-                        16,
+                        52, pdis->rcItem.top + 36,
+                        hicnSecurity,
+                        16, 16,
                         NULL,
                         NULL,
                         DI_NORMAL);
+
+                    /* WEP is not secure for decades */
+                    if (wlanNetwork.dot11DefaultAuthAlgorithm < DOT11_AUTH_ALGO_WPA)
+                    {
+                        DrawIconEx(pdis->hDC,
+                            54, pdis->rcItem.top + 37,
+                            LoadIconW(wlanwiz_hInstance, MAKEINTRESOURCE(IDI_AP_DHCP_FAILED)),
+                            16, 16,
+                            NULL,
+                            NULL,
+                            DI_NORMAL);
+                    }
+
+                    DestroyIcon(hicnSecurity);
                 }
 
                 crItemText = SetTextColor(pdis->hDC, GetSysColor(pdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT));
