@@ -167,14 +167,46 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 SendDlgItemMessageW(pdis->CtlID, LB_GETTEXT, pdis->itemID, reinterpret_cast<LPARAM>(cswWindowText.GetBuffer()));
                 cswWindowText.ReleaseBuffer();
 
-                /* SSID is drawn with bold font */
-                COLORREF crItemText = NULL;
-                this->lfCaption.lfWeight = FW_BOLD;
-                this->lfCaption.lfUnderline = FALSE;
+                /* Get all related text lines */
+#pragma region Authentication Standard
+                ATL::CStringW cswNetworkSecurityAlgo = L"";
+                ATL::CStringW cswNetworkSecurity = L"";
 
-                HFONT hfCaption = CreateFontIndirectW(&this->lfCaption);
-                HGDIOBJ hOld = SelectObject(pdis->hDC, hfCaption);
+                if (wlanNetwork.bSecurityEnabled)
+                {
+                    switch (wlanNetwork.dot11DefaultAuthAlgorithm)
+                    {
+                    case DOT11_AUTH_ALGO_80211_OPEN:
+                    case DOT11_AUTH_ALGO_80211_SHARED_KEY:
+                        cswNetworkSecurityAlgo = L" (WEP)";
+                        break;
+                    case DOT11_AUTH_ALGO_WPA:
+                    case DOT11_AUTH_ALGO_WPA_PSK:
+                        cswNetworkSecurityAlgo = L" (WPA)";
+                        break;
+                    case DOT11_AUTH_ALGO_RSNA:
+                    case DOT11_AUTH_ALGO_RSNA_PSK: /* Possible as of NT 6.0 on ad hoc */
+                        cswNetworkSecurityAlgo = L" (WPA2)";
+                        break;
+#ifndef __REACTOS__ /* uncomment when will be implemented */
+                    case DOT11_AUTH_ALGO_WPA3:
+                    case DOT11_AUTH_ALGO_WPA3_SAE:
+                    case DOT11_AUTH_ALGO_WPA3_ENT:
+                        cswNetworkSecurityAlgo = L" (WPA3)";
+                        break;
+#endif
+                    default:
+                        break;
+                    }
+                }
 
+                if (wlanNetwork.dot11BssType == dot11_BSS_type_infrastructure)
+                    cswNetworkSecurity.LoadStringW(wlanNetwork.bSecurityEnabled ? IDS_WLANWIZ_ENCRYPTED_AP : IDS_WLANWIZ_UNENCRYPTED_AP);
+                else if (wlanNetwork.dot11BssType == dot11_BSS_type_independent)
+                    cswNetworkSecurity.LoadStringW(wlanNetwork.bSecurityEnabled ? IDS_WLANWIZ_ENCRYPTED_IBSS : IDS_WLANWIZ_UNENCRYPTED_IBSS);
+
+                cswNetworkSecurity += cswNetworkSecurityAlgo;
+#pragma endregion
                 if (!(pdis->itemState & ODS_SELECTED))
                 {
                     COLORREF cr3dFace = 0;
@@ -223,33 +255,13 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                     DeleteObject(hbrSelectedBg);
                 }
 
-                /* Draw security indicator */
-                if (wlanNetwork.bSecurityEnabled)
-                {
-                    HICON hicnSecurity = LoadIconW(GetModuleHandleW(L"shell32.dll"), MAKEINTRESOURCEW(48)); /* lock icon */
+                /* SSID is drawn with bold font */
+                COLORREF crItemText = NULL;
+                this->lfCaption.lfWeight = FW_BOLD;
+                this->lfCaption.lfUnderline = FALSE;
 
-                    DrawIconEx(pdis->hDC,
-                        52, pdis->rcItem.top + 36,
-                        hicnSecurity,
-                        16, 16,
-                        NULL,
-                        NULL,
-                        DI_NORMAL);
-
-                    /* WEP is not secure for decades */
-                    if (wlanNetwork.dot11DefaultAuthAlgorithm < DOT11_AUTH_ALGO_WPA)
-                    {
-                        DrawIconEx(pdis->hDC,
-                            54, pdis->rcItem.top + 37,
-                            LoadIconW(wlanwiz_hInstance, MAKEINTRESOURCE(IDI_AP_DHCP_FAILED)),
-                            16, 16,
-                            NULL,
-                            NULL,
-                            DI_NORMAL);
-                    }
-
-                    DestroyIcon(hicnSecurity);
-                }
+                HFONT hfCaption = CreateFontIndirectW(&this->lfCaption);
+                HGDIOBJ hOld = SelectObject(pdis->hDC, hfCaption);
 
                 crItemText = SetTextColor(pdis->hDC, GetSysColor(pdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT));
                 TextOutW(pdis->hDC, 52, pdis->rcItem.top + 4, cswWindowText, cswWindowText.GetLength()); /* SSID */
@@ -257,56 +269,6 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 
                 SelectObject(pdis->hDC, hOld);
                 DeleteObject(hfCaption);
-
-                /* Is network password-protected? */
-                ATL::CStringW cswNetworkSecurity = L"";
-
-                if (wlanNetwork.dot11BssType == dot11_BSS_type_infrastructure)
-                {
-                    cswNetworkSecurity.LoadStringW(wlanNetwork.bSecurityEnabled ? IDS_WLANWIZ_ENCRYPTED_AP : IDS_WLANWIZ_UNENCRYPTED_AP);
-                    if (wlanNetwork.bSecurityEnabled)
-                    {
-                        switch (wlanNetwork.dot11DefaultAuthAlgorithm)
-                        {
-                        case DOT11_AUTH_ALGO_WPA:
-                        case DOT11_AUTH_ALGO_WPA_PSK:
-                            cswNetworkSecurity += L" (WPA)";
-                            break;
-                        case DOT11_AUTH_ALGO_RSNA:
-                        case DOT11_AUTH_ALGO_RSNA_PSK:
-                            cswNetworkSecurity += L" (WPA2)";
-                            break;
-#ifndef __REACTOS__ /* uncomment when will be implemented */
-                        case DOT11_AUTH_ALGO_WPA3:
-                        case DOT11_AUTH_ALGO_WPA3_SAE:
-                        case DOT11_AUTH_ALGO_WPA3_ENT:
-                            cswNetworkSecurity += L" (WPA3)";
-                            break;
-#endif
-                        default:
-                            break;
-                        }
-                    }
-                }
-                else if (wlanNetwork.dot11BssType == dot11_BSS_type_independent)
-                {
-                    cswNetworkSecurity.LoadStringW(wlanNetwork.bSecurityEnabled ? IDS_WLANWIZ_ENCRYPTED_IBSS : IDS_WLANWIZ_UNENCRYPTED_IBSS);
-                    if (wlanNetwork.bSecurityEnabled)
-                    {
-                        switch (wlanNetwork.dot11DefaultAuthAlgorithm)
-                        {
-                        case DOT11_AUTH_ALGO_80211_OPEN:
-                        case DOT11_AUTH_ALGO_80211_SHARED_KEY:
-                            cswNetworkSecurity += L" (WEP)";
-                            break;
-                        case DOT11_AUTH_ALGO_RSNA_PSK: /* Possible as of NT 6.0 */
-                            cswNetworkSecurity += L" (WPA2)";
-                            break;
-                        default:
-                            break;
-                        }
-                    }
-                }
                 
                 TextOutW(pdis->hDC,
                         wlanNetwork.bSecurityEnabled ? 72 : 52,
@@ -390,6 +352,34 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                     DI_NORMAL);
 
                 DestroyIcon(hicnRes);
+
+                /* Draw security indicator */
+                if (wlanNetwork.bSecurityEnabled)
+                {
+                    HICON hicnSecurity = LoadIconW(GetModuleHandleW(L"shell32.dll"), MAKEINTRESOURCEW(48)); /* lock icon */
+
+                    DrawIconEx(pdis->hDC,
+                        52, pdis->rcItem.top + 36,
+                        hicnSecurity,
+                        16, 16,
+                        NULL,
+                        NULL,
+                        DI_NORMAL);
+
+                    /* WEP is not secure for decades */
+                    if (wlanNetwork.dot11DefaultAuthAlgorithm < DOT11_AUTH_ALGO_WPA)
+                    {
+                        DrawIconEx(pdis->hDC,
+                            54, pdis->rcItem.top + 37,
+                            LoadIconW(wlanwiz_hInstance, MAKEINTRESOURCE(IDI_AP_DHCP_FAILED)),
+                            16, 16,
+                            NULL,
+                            NULL,
+                            DI_NORMAL);
+                    }
+
+                    DestroyIcon(hicnSecurity);
+                }
 
                 /* Shrink focus rectangle for listbox items */
                 pdis->rcItem.left += 1;
