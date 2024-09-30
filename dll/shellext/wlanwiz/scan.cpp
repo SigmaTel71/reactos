@@ -82,10 +82,11 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
 
         for (;
             this->lstWlanNetworks->dwIndex <= this->lstWlanNetworks->dwNumberOfItems - 1;
-            this->lstWlanNetworks->dwIndex++)
+            ++this->lstWlanNetworks->dwIndex)
         {
             ATL::CSimpleArray<UINT> csaIndexAndQuality;
             WLAN_AVAILABLE_NETWORK wlanNetwork = this->lstWlanNetworks->Network[this->lstWlanNetworks->dwIndex];
+
             csaIndexAndQuality.Add(wlanNetwork.wlanSignalQuality);
             csaIndexAndQuality.Add(this->lstWlanNetworks->dwIndex);
 
@@ -106,7 +107,22 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
         while (posIAQ != NULL)
         {
             auto csaIAQ = calIndexToSignalQuality.GetNext(posIAQ);
-            DOT11_SSID ssid = this->lstWlanNetworks->Network[csaIAQ[1]].dot11Ssid;
+            WLAN_AVAILABLE_NETWORK wlanNetwork = this->lstWlanNetworks->Network[csaIAQ[1]];
+
+            /* Omit duplicates by keeping networks that have profile if there is the same entry without one */
+            if (posIAQ != NULL)
+            {
+                auto csaIAQPrev = calIndexToSignalQuality.GetPrev(posIAQ);
+                calIndexToSignalQuality.GetNext(posIAQ);
+
+                WLAN_AVAILABLE_NETWORK wlanPrevNetwork = this->lstWlanNetworks->Network[csaIAQPrev[1]];
+                if (   (wlanPrevNetwork.dwFlags & WLAN_AVAILABLE_NETWORK_HAS_PROFILE) != 0
+                    && (wlanNetwork.dwFlags & WLAN_AVAILABLE_NETWORK_HAS_PROFILE) == 0
+                    && memcmp(wlanNetwork.dot11Ssid.ucSSID, wlanPrevNetwork.dot11Ssid.ucSSID, wlanPrevNetwork.dot11Ssid.uSSIDLength) == 0)
+                    continue;
+            }
+
+            DOT11_SSID ssid = wlanNetwork.dot11Ssid;
 
             int iSSIDLengthWide = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(ssid.ucSSID), ssid.uSSIDLength, NULL, 0);
             ATL::CStringW cswWlanNetworkName = ATL::CStringW(L"", iSSIDLengthWide);
