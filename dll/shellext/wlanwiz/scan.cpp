@@ -106,14 +106,15 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
         while (posIAQ != NULL)
         {
             auto csaIAQ = calIndexToSignalQuality.GetNext(posIAQ);
+            DOT11_SSID ssid = this->lstWlanNetworks->Network[csaIAQ[1]].dot11Ssid;
 
-            ATL::CStringW cswWlanNetworkName = "";
-            cswWlanNetworkName = CA2W(reinterpret_cast<LPCSTR>(this->lstWlanNetworks->Network[csaIAQ[1]].dot11Ssid.ucSSID));
+            int iSSIDLengthWide = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(ssid.ucSSID), ssid.uSSIDLength, NULL, 0);
+            ATL::CStringW cswWlanNetworkName = ATL::CStringW(L"", iSSIDLengthWide);
+
+            MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(ssid.ucSSID), ssid.uSSIDLength, cswWlanNetworkName.GetBuffer(), iSSIDLengthWide);
             
             if (cswWlanNetworkName.IsEmpty())
                 cswWlanNetworkName.LoadStringW(IDS_WLANWIZ_HIDDEN_NETWORK);
-            else
-                cswWlanNetworkName = cswWlanNetworkName.Left(DOT11_SSID_MAX_LENGTH);
 
             LRESULT iItemIdx = m_ListboxWLAN.SendMessageW(LB_ADDSTRING,
                 NULL,
