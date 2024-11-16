@@ -348,16 +348,11 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 if (pdis->itemState & ODS_SELECTED)
                 {
                     ATL::CStringW cswExpandedText = L"";
-                    ATL::CStringW cswConnectButtonText = L"";
 
                     if (wlanNetwork.dwFlags & WLAN_AVAILABLE_NETWORK_CONNECTED)
-                    {
-                        cswConnectButtonText.LoadStringW(IDS_WLANWIZ_DISCONNECT);
                         cswExpandedText.LoadStringW(IDS_WLANWIZ_EXPAND_CONNECTED);
-                    }
                     else
                     {
-                        cswConnectButtonText.LoadStringW(IDS_WLANWIZ_CONNECT);
                         if (wlanNetwork.bSecurityEnabled)
                         {
                             wlanNetwork.dot11DefaultAuthAlgorithm < DOT11_AUTH_ALGO_WPA
@@ -377,7 +372,6 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                     };
 
                     DrawTextW(pdis->hDC, cswExpandedText, cswExpandedText.GetLength(), &rcExpandedText, DT_WORDBREAK | DT_LEFT);
-                    GetDlgItem(IDC_WLANWIZ_MAINBUTTON).SetWindowTextW(cswConnectButtonText);
                 }
 
                 SetTextColor(pdis->hDC, crItemText);
