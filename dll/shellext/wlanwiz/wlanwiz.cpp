@@ -311,7 +311,10 @@ LRESULT CWlanWizard::OnListBox(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& b
     {
     case LBN_SELCHANGE:
         ATL::CWindow cwLB = hWndCtl;
+        ATL::CStringW cswConnectButtonText = L"";
+
         LRESULT dwItemID = cwLB.SendMessageW(LB_GETCURSEL, 0, 0);
+        DWORD dwConnectBtnStringID = IDS_WLANWIZ_CONNECT;
 
         if (dwItemID == LB_ERR)
             break;
@@ -320,9 +323,16 @@ LRESULT CWlanWizard::OnListBox(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& b
         cwLB.SendMessageW(LB_SETITEMHEIGHT, dwItemID, 136);
         
         this->dwSelectedItemID = static_cast<DWORD>(dwItemID);
+        LRESULT itemRealID = cwLB.SendMessageW(LB_GETITEMDATA, dwItemID);
         
         cwLB.Invalidate(FALSE);
         cwLB.UpdateWindow();
+
+        if (this->lstWlanNetworks->Network[itemRealID].dwFlags & WLAN_AVAILABLE_NETWORK_CONNECTED)
+            dwConnectBtnStringID = IDS_WLANWIZ_DISCONNECT;
+
+        cswConnectButtonText.LoadStringW(dwConnectBtnStringID);
+        m_ConnectButton.SetWindowTextW(cswConnectButtonText);
         break;
     }
 
