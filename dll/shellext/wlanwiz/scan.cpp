@@ -12,19 +12,48 @@
 LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
 {
     MSG msg;
+    GUID gCurAdapter;
+    PWLAN_RADIO_STATE pWRSCurAdapter = NULL;
+    WLAN_OPCODE_VALUE_TYPE wovtCurrAdapter = wlan_opcode_value_type_invalid;
+    DWORD dwWRSsize = sizeof(WLAN_RADIO_STATE);
 
     this->uScanStatus = STATUS_SCANNING;
     this->bScanTimeout = FALSE;
     this->dwSelectedItemID = -1;
 
-    m_SidebarButtonAS.EnableWindow(FALSE);
-    m_SidebarButtonSN.EnableWindow(FALSE);
     m_ConnectButton.EnableWindow(FALSE);
     m_ListboxWLAN.EnableWindow(FALSE);
 
     /* Clear listbox from previously discovered networks */
     m_ListboxWLAN.SendMessageW(LB_RESETCONTENT, NULL, NULL);
     m_ListboxWLAN.Invalidate();
+
+    /* Check if the adapter is enabled, both hardware and software */
+    IIDFromString(this->m_sGUID, &gCurAdapter);
+    WlanQueryInterface(this->hWlanClient,
+                       &gCurAdapter,
+                       wlan_intf_opcode_radio_state,
+                       NULL,
+                       &dwWRSsize,
+                       reinterpret_cast<PVOID*>(&pWRSCurAdapter),
+                       &wovtCurrAdapter);
+
+    if (!(   pWRSCurAdapter->PhyRadioState[0].dot11SoftwareRadioState == dot11_radio_state_on
+          && pWRSCurAdapter->PhyRadioState[0].dot11HardwareRadioState == dot11_radio_state_on))
+    {
+        this->uScanStatus = STATUS_SCAN_COMPLETE;
+        this->bScanTimeout = TRUE;
+
+        if (this->lstWlanNetworks != NULL)
+        {
+            WlanFreeMemory(this->lstWlanNetworks);
+            RtlSecureZeroMemory(&this->lstWlanNetworks, sizeof(this->lstWlanNetworks));
+        }
+        return FALSE;
+    }
+
+    m_SidebarButtonAS.EnableWindow(FALSE);
+    m_SidebarButtonSN.EnableWindow(FALSE);
 
     SetTimer(IDT_SCANNING_NETWORKS, 5000);
 
