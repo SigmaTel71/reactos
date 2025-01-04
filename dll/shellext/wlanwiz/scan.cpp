@@ -39,6 +39,10 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
                        reinterpret_cast<PVOID*>(&pWRSCurAdapter),
                        &wovtCurrAdapter);
 
+    DPRINT("WLAN adapter radio status: hardware %s, software %s\n",
+        pWRSCurAdapter->PhyRadioState[0].dot11HardwareRadioState == dot11_radio_state_on ? "on" : "off",
+        pWRSCurAdapter->PhyRadioState[0].dot11SoftwareRadioState == dot11_radio_state_on ? "on" : "off");
+
     if (!(   pWRSCurAdapter->PhyRadioState[0].dot11SoftwareRadioState == dot11_radio_state_on
           && pWRSCurAdapter->PhyRadioState[0].dot11HardwareRadioState == dot11_radio_state_on))
     {
