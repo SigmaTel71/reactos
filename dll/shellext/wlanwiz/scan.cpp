@@ -30,7 +30,7 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
 
     /* Check if the adapter is enabled, both hardware and software */
     IIDFromString(this->m_sGUID, &gCurAdapter);
-    WlanQueryInterface(this->hWlanClient,
+    DWORD dwResult = WlanQueryInterface(this->hWlanClient,
                        &gCurAdapter,
                        wlan_intf_opcode_radio_state,
                        NULL,
@@ -38,18 +38,31 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
                        reinterpret_cast<PVOID*>(&pWRSCurAdapter),
                        &wovtCurrAdapter);
 
-    if (!(   pWRSCurAdapter->PhyRadioState[0].dot11SoftwareRadioState == dot11_radio_state_on
-          && pWRSCurAdapter->PhyRadioState[0].dot11HardwareRadioState == dot11_radio_state_on))
+    if (pWRSCurAdapter == NULL)
     {
-        this->uScanStatus = STATUS_SCAN_COMPLETE;
-        this->bScanTimeout = TRUE;
+        DPRINT1("Cannot determine radio state due to 0x%lx\n", dwResult);
+    }
+    else
+    {
+        DOT11_RADIO_STATE rsHw = pWRSCurAdapter->PhyRadioState[0].dot11HardwareRadioState;
+        DOT11_RADIO_STATE rsSw = pWRSCurAdapter->PhyRadioState[0].dot11SoftwareRadioState;
 
-        if (this->lstWlanNetworks != NULL)
+        DPRINT("WLAN adapter radio status: hardware %s, software %s\n",
+            rsHw == dot11_radio_state_on ? "on" : "off (or unknown)",
+            rsSw == dot11_radio_state_on ? "on" : "off (or unknown)");
+        
+        if (!(rsSw == dot11_radio_state_on && rsHw == dot11_radio_state_on))
         {
-            WlanFreeMemory(this->lstWlanNetworks);
-            RtlSecureZeroMemory(&this->lstWlanNetworks, sizeof(this->lstWlanNetworks));
+            this->uScanStatus = STATUS_SCAN_COMPLETE;
+            this->bScanTimeout = TRUE;
+
+            if (this->lstWlanNetworks != NULL)
+            {
+                WlanFreeMemory(this->lstWlanNetworks);
+                RtlSecureZeroMemory(&this->lstWlanNetworks, sizeof(this->lstWlanNetworks));
+            }
+            return FALSE;
         }
-        return FALSE;
     }
 
     m_SidebarButtonAS.EnableWindow(FALSE);
