@@ -2,7 +2,7 @@
  * PROJECT:     ReactOS Shell
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     ReactOS Wizard for Wireless Network Connections
- * COPYRIGHT:   Copyright 2024 Vitaly Orekhov <vkvo2000@vivaldi.net>
+ * COPYRIGHT:   Copyright 2024-2025 Vitaly Orekhov <vkvo2000@vivaldi.net>
  */
 #pragma once
 #include <atlbase.h>
@@ -10,6 +10,7 @@
 #include <atlconv.h>
 #include <atlstr.h>
 #include <atlwin.h>
+#include <debug.h>
 #include <strsafe.h>
 #include <shlobj.h>
 #include <shlwapi.h>
