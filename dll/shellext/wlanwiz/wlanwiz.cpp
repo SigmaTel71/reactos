@@ -2,7 +2,7 @@
  * PROJECT:     ReactOS Shell
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     ReactOS Wizard for Wireless Network Connections
- * COPYRIGHT:   Copyright 2024 Vitaly Orekhov <vkvo2000@vivaldi.net>
+ * COPYRIGHT:   Copyright 2024-2025 Vitaly Orekhov <vkvo2000@vivaldi.net>
  */
 #include "main.h"
 #include "resource.h"
@@ -143,6 +143,7 @@ BOOL CWlanWizard::FindWlanDevice(ATL::CString sGUID)
         {
             if (IsEqualGUID(gWlanDeviceID, this->lstWlanInterfaces->InterfaceInfo[i].InterfaceGuid))
             {
+                DPRINT("Using manually selected adapter %S\n", this->lstWlanInterfaces->InterfaceInfo[i].strInterfaceDescription);
                 StringFromIID(gWlanDeviceID, &this->m_sGUID);
                 return TRUE;
             }
@@ -156,7 +157,10 @@ BOOL CWlanWizard::FindWlanDevice(ATL::CString sGUID)
         BOOL bWlanDevicePresent = this->lstWlanInterfaces->dwNumberOfItems > 0;
         
         if (bWlanDevicePresent)
+        {
+            DPRINT("Using automatically selected adapter %S\n", this->lstWlanInterfaces->InterfaceInfo[0].strInterfaceDescription);
             dwResult = StringFromIID(this->lstWlanInterfaces->InterfaceInfo[0].InterfaceGuid, &this->m_sGUID);
+        }
 
         return bWlanDevicePresent;
     }
