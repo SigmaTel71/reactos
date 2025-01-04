@@ -2,13 +2,16 @@
  * PROJECT:     ReactOS Shell
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     ReactOS Wizard for Wireless Network Connections (WLAN Scanning Routines)
- * COPYRIGHT:   Copyright 2024 Vitaly Orekhov <vkvo2000@vivaldi.net>
+ * COPYRIGHT:   Copyright 2024-2025 Vitaly Orekhov <vkvo2000@vivaldi.net>
  */
 
 #include "main.h"
 
+#include <algorithm>
+#include <numeric>
+#include <set>
 #include <string>
-#include <unordered_set>
+#include <vector>
 
 LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
 {
@@ -88,23 +91,57 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
     m_SidebarButtonAS.EnableWindow();
     m_SidebarButtonSN.EnableWindow();
 
-    /*
-     * WIP:  Single pass sorting of discovered networks.
-     * TODO: Restore ad-hoc network positioning in the end of the list.
-     */     
+    DPRINT("Discovered %lu access points\n", this->lstWlanNetworks->dwNumberOfItems);
+     
     if (this->lstWlanNetworks->dwNumberOfItems > 0)
     {
-        /* Add discovered networks to listbox and sort networks by signal level */
-        std::unordered_set<std::wstring_view> ucAPsWithProfiles;
-        WLAN_SIGNAL_QUALITY ulPrevSignalQuality = 0, ulWorstSignalQuality = 100;
-                
-        for (;
-            this->lstWlanNetworks->dwIndex <= this->lstWlanNetworks->dwNumberOfItems - 1;
-            ++this->lstWlanNetworks->dwIndex)
+        auto vecIndexesBySignalQuality = std::vector<DWORD>(this->lstWlanNetworks->dwNumberOfItems);
+        DWORD dwConnectedTo = MAXDWORD;
+        std::set<DWORD> setDiscoveredAdHocIndexes;
+        std::iota(vecIndexesBySignalQuality.begin(), vecIndexesBySignalQuality.end(), 0);
+
+        /* Sort networks by signal level */
+        std::sort(vecIndexesBySignalQuality.begin(), vecIndexesBySignalQuality.end(), [&](DWORD left, DWORD right)
         {
-            WLAN_AVAILABLE_NETWORK wlanNetwork = this->lstWlanNetworks->Network[this->lstWlanNetworks->dwIndex];
+            WLAN_AVAILABLE_NETWORK wlanLeft = this->lstWlanNetworks->Network[left];
+            WLAN_AVAILABLE_NETWORK wlanRight = this->lstWlanNetworks->Network[right];
+            
+            if (wlanLeft.dot11BssType == dot11_BSS_type_independent)
+                setDiscoveredAdHocIndexes.insert(left);
+
+            if (wlanLeft.dwFlags & WLAN_AVAILABLE_NETWORK_CONNECTED)
+                dwConnectedTo = left;
+
+            return wlanLeft.wlanSignalQuality > wlanRight.wlanSignalQuality;
+        });
+
+        /* Shift all ad hoc networks to end */
+        if (setDiscoveredAdHocIndexes.size() > 0)
+        {
+            for (const auto& dwAdHocIdx : setDiscoveredAdHocIndexes)
+            {
+                auto iter = std::find(vecIndexesBySignalQuality.begin(), vecIndexesBySignalQuality.end(), dwAdHocIdx);
+
+                if (iter != vecIndexesBySignalQuality.end())
+                {
+                    auto idx = iter - vecIndexesBySignalQuality.begin();
+                    std::rotate(vecIndexesBySignalQuality.begin() + idx, vecIndexesBySignalQuality.begin() + idx + 1, vecIndexesBySignalQuality.end());
+                }
+            }
+        }
+
+        /* Finally, move currently connected network to beginning */
+        if (dwConnectedTo != MAXDWORD)
+        {
+            auto connectedIdx = std::find(vecIndexesBySignalQuality.begin(), vecIndexesBySignalQuality.end(), dwConnectedTo) - vecIndexesBySignalQuality.begin();
+            std::rotate(vecIndexesBySignalQuality.begin() + connectedIdx, vecIndexesBySignalQuality.begin() + connectedIdx + 1, vecIndexesBySignalQuality.end());
+        }
+
+        /* TODO: remove networks that do not have a saved profile matching the SSID */
+        for (const auto& dwNetwork : vecIndexesBySignalQuality)
+        {
+            WLAN_AVAILABLE_NETWORK wlanNetwork = this->lstWlanNetworks->Network[dwNetwork];
             std::wstring_view wsvSSID;
-            int iInsertAt = -1;
 
             // Convert SSID from UTF-8 to UTF-16
             int iSSIDLengthWide = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(wlanNetwork.dot11Ssid.ucSSID), wlanNetwork.dot11Ssid.uSSIDLength, NULL, 0);
@@ -113,35 +150,16 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
             MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(wlanNetwork.dot11Ssid.ucSSID), wlanNetwork.dot11Ssid.uSSIDLength, cswSSID.GetBuffer(), iSSIDLengthWide);
             wsvSSID = std::wstring_view(cswSSID.GetBuffer());
 
-            // TODO: filter access points by profile
-            if (ucAPsWithProfiles.find(wsvSSID) != ucAPsWithProfiles.end())
-                continue;
-
-            /* This allows discarding duplicated entries that with APs we had already connected earlier */
-            if (wlanNetwork.dwFlags & WLAN_AVAILABLE_NETWORK_HAS_PROFILE)
-                ucAPsWithProfiles.emplace(wsvSSID);
-
-            /* Sort by descending signal order */
-            if (this->lstWlanNetworks->dwIndex == 0 || wlanNetwork.wlanSignalQuality > ulPrevSignalQuality)
-                iInsertAt = 0;
-            else if (wlanNetwork.wlanSignalQuality < ulPrevSignalQuality)
-                iInsertAt = 1;
-
             if (cswSSID.IsEmpty())
                 cswSSID.LoadStringW(IDS_WLANWIZ_HIDDEN_NETWORK);
 
             LRESULT iItemIdx = m_ListboxWLAN.SendMessageW(LB_INSERTSTRING,
-                iInsertAt,
+                -1,
                 reinterpret_cast<LPARAM>(cswSSID.GetBuffer()));
 
             m_ListboxWLAN.SendMessageW(LB_SETITEMDATA,
                 iItemIdx,
-                static_cast<LPARAM>(this->lstWlanNetworks->dwIndex));
-
-            ulPrevSignalQuality = wlanNetwork.wlanSignalQuality;
-
-            if (ulPrevSignalQuality < ulWorstSignalQuality)
-                ulWorstSignalQuality = ulPrevSignalQuality;
+                static_cast<LPARAM>(dwNetwork));
         }
     }
 
