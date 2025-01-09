@@ -6,6 +6,8 @@
  */
 
 #pragma once
+#include <set>
+
 #include <atlbase.h>
 #include <atlcoll.h>
 #include <atlconv.h>
@@ -168,6 +170,9 @@ private:
 
 	HWND CreateToolTip(int toolID);
 	static DWORD WINAPI ScanNetworksThread(_In_ LPVOID lpParameter);
+	void TryInsertToAdHoc(std::set<DWORD>& setAdHoc, DWORD dwIndex);
+	void TryInsertToKnown(std::set<DWORD>& setProfiles, DWORD dwIndex);
+	DWORD TryFindConnected(DWORD dwIndex);
 
 	LRESULT OnInitDialog(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
