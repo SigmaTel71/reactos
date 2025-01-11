@@ -206,14 +206,14 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
 
         for (const auto& dwNetwork : vecIndexesBySignalQuality)
         {
-            WLAN_AVAILABLE_NETWORK wlanNetwork = this->lstWlanNetworks->Network[dwNetwork];
+            PWLAN_AVAILABLE_NETWORK pWlanNetwork = &this->lstWlanNetworks->Network[dwNetwork];
             std::wstring_view wsvSSID;
 
             // Convert SSID from UTF-8 to UTF-16
-            int iSSIDLengthWide = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(wlanNetwork.dot11Ssid.ucSSID), wlanNetwork.dot11Ssid.uSSIDLength, NULL, 0);
+            int iSSIDLengthWide = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(pWlanNetwork->dot11Ssid.ucSSID), pWlanNetwork->dot11Ssid.uSSIDLength, NULL, 0);
 
             ATL::CStringW cswSSID = ATL::CStringW(L"", iSSIDLengthWide);
-            MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(wlanNetwork.dot11Ssid.ucSSID), wlanNetwork.dot11Ssid.uSSIDLength, cswSSID.GetBuffer(), iSSIDLengthWide);
+            MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(pWlanNetwork->dot11Ssid.ucSSID), pWlanNetwork->dot11Ssid.uSSIDLength, cswSSID.GetBuffer(), iSSIDLengthWide);
             wsvSSID = std::wstring_view(cswSSID.GetBuffer());
 
             if (cswSSID.IsEmpty())
@@ -230,9 +230,7 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
     }
 
     /* Show discovered networks */
-    RECT rc;
     m_ListboxWLAN.EnableWindow();
-    m_ListboxWLAN.GetClientRect(&rc);
     m_ListboxWLAN.Invalidate();
     m_ListboxWLAN.SetFocus();
 
