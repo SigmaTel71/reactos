@@ -10,48 +10,6 @@
 #include <numeric>
 #include <vector>
 
-/* Convert SSID from UTF-8 to UTF-16 */ 
-static ATL::CStringW APNameToUnicode(PDOT11_SSID dot11Ssid)
-{
-    int iSSIDLengthWide = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(dot11Ssid->ucSSID), dot11Ssid->uSSIDLength, NULL, 0);
-
-    ATL::CStringW cswSSID = ATL::CStringW(L"", iSSIDLengthWide);
-    MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(dot11Ssid->ucSSID), dot11Ssid->uSSIDLength, cswSSID.GetBuffer(), iSSIDLengthWide);
-
-    return cswSSID;
-}
-
-void CWlanWizard::TryInsertToKnown(std::set<DWORD>& setProfiles, DWORD dwIndex)
-{
-    PWLAN_AVAILABLE_NETWORK pWlanNetwork = &this->lstWlanNetworks->Network[dwIndex];
-
-    if ((pWlanNetwork->dwFlags & WLAN_AVAILABLE_NETWORK_HAS_PROFILE) == WLAN_AVAILABLE_NETWORK_HAS_PROFILE)
-    {
-        std::wstring_view wsvSSID = APNameToUnicode(&pWlanNetwork->dot11Ssid);
-
-        if (wsvSSID == pWlanNetwork->strProfileName)
-            setProfiles.insert(dwIndex);
-    }
-}
-
-void CWlanWizard::TryInsertToAdHoc(std::set<DWORD>& setAdHoc, DWORD dwIndex)
-{
-    PWLAN_AVAILABLE_NETWORK pWlanNetwork = &this->lstWlanNetworks->Network[dwIndex];
-
-    if (pWlanNetwork->dot11BssType == dot11_BSS_type_independent)
-        setAdHoc.insert(dwIndex);
-}
-
-DWORD CWlanWizard::TryFindConnected(DWORD dwIndex)
-{
-    PWLAN_AVAILABLE_NETWORK pWlanNetwork = &this->lstWlanNetworks->Network[dwIndex];
-
-    if ((pWlanNetwork->dwFlags & WLAN_AVAILABLE_NETWORK_CONNECTED) == WLAN_AVAILABLE_NETWORK_CONNECTED)
-        return dwIndex;
-
-    return MAXDWORD;
-}
-
 LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
 {
     MSG msg;
