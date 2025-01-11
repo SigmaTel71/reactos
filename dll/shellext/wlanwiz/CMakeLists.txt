@@ -9,6 +9,7 @@ list(APPEND SOURCE
     wlanwiz.cpp
     advsettings.cpp
     draw.cpp
+    helpers.cpp
     keyb.cpp
     scan.cpp
     subclassproc_lb.cpp
