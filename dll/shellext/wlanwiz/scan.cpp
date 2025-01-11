@@ -213,8 +213,8 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
 
         for (const auto& dwNetwork : vecIndexesBySignalQuality)
         {
-            WLAN_AVAILABLE_NETWORK wlanNetwork = this->lstWlanNetworks->Network[dwNetwork];
-            ATL::CStringW cswSSID = APNameToUnicode(&wlanNetwork.dot11Ssid);
+            PWLAN_AVAILABLE_NETWORK pWlanNetwork = &this->lstWlanNetworks->Network[dwNetwork];
+            ATL::CStringW cswSSID = APNameToUnicode(&pWlanNetwork->dot11Ssid);
 
             if (cswSSID.IsEmpty())
                 cswSSID.LoadStringW(IDS_WLANWIZ_HIDDEN_NETWORK);
