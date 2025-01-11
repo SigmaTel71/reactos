@@ -66,43 +66,6 @@ WlanWizOpen(HWND, HINSTANCE, LPCSTR lpszCmdLine, int) {
 
 }
 
-HWND CWlanWizard::CreateToolTip(int nID)
-{
-    ATL::CStringW cswTooltip;
-    BOOL bLoaded = cswTooltip.LoadStringW(nID + 40);
-
-    if (!nID || !bLoaded)
-        return FALSE;
-
-    HWND hDlgItem = this->GetDlgItem(nID);
-    ATL::CWindow hWndTip = ::CreateWindowExW(NULL,
-                                             TOOLTIPS_CLASSW,
-                                             NULL,
-                                             WS_POPUP,
-                                             CW_USEDEFAULT,
-                                             CW_USEDEFAULT,
-                                             CW_USEDEFAULT,
-                                             CW_USEDEFAULT,
-                                             this->m_hWnd,
-                                             NULL,
-                                             wlanwiz_hInstance,
-                                             NULL);
-
-    if (!hDlgItem || !hWndTip)
-        return NULL;
-
-    TOOLINFOW toolInfo = { 0 };
-    toolInfo.cbSize = sizeof(toolInfo);
-    toolInfo.hwnd = this->m_hWnd;
-    toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
-    toolInfo.uId = reinterpret_cast<UINT_PTR>(hDlgItem);
-    toolInfo.lpszText = cswTooltip.GetBuffer();
-
-    hWndTip.SendMessageW(TTM_ADDTOOL, NULL, reinterpret_cast<LPARAM>(&toolInfo));
-
-    return hWndTip;
-}
-
 void CWlanWizard::PreCloseCleanup()
 {
     CoTaskMemFree(gModule.m_sGUID);
