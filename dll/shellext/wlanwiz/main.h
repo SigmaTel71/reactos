@@ -167,12 +167,6 @@ private:
 	/* Listbox specific variables */
 	DWORD dwSelectedItemID = 0;
 
-	HWND CreateToolTip(int toolID);
-	static DWORD WINAPI ScanNetworksThread(_In_ LPVOID lpParameter);
-	void TryInsertToAdHoc(std::set<DWORD>& setAdHoc, DWORD dwIndex);
-	void TryInsertToKnown(std::set<DWORD>& setProfiles, DWORD dwIndex);
-	DWORD TryFindConnected(DWORD dwIndex);
-
 	LRESULT OnInitDialog(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnClose(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
@@ -201,4 +195,12 @@ private:
 
 	/* ALT_MSG_MAP 4 */
 	LRESULT OnPaintGroupBox(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+
+	/* Helper functions */
+	HWND CreateToolTip(_In_ int toolID);
+	static DWORD WINAPI ScanNetworksThread(_In_ LPVOID lpParameter);
+	static ATL::CStringW APNameToUnicode(_In_ PDOT11_SSID dot11Ssid);
+	void TryInsertToAdHoc(_Inout_ std::set<DWORD>& setAdHoc, _In_ DWORD dwIndex);
+	void TryInsertToKnown(_Inout_ std::set<DWORD>& setProfiles, _In_ DWORD dwIndex);
+	DWORD TryFindConnected(_In_ DWORD dwIndex);
 };
