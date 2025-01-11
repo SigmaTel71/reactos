@@ -2,7 +2,7 @@
  * PROJECT:     ReactOS Shell
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     ReactOS Wizard for Wireless Network Connections (Drawing Routines)
- * COPYRIGHT:   Copyright 2024 Vitaly Orekhov <vkvo2000@vivaldi.net>
+ * COPYRIGHT:   Copyright 2024-2025 Vitaly Orekhov <vkvo2000@vivaldi.net>
  */
 #include "main.h"
 
@@ -158,7 +158,7 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 UINT uSSIDLength = static_cast<UINT>(SendDlgItemMessageW(pdis->CtlID, LB_GETTEXTLEN, pdis->itemID, NULL));
                 DWORD uItemRealID = static_cast<DWORD>(SendDlgItemMessageW(pdis->CtlID, LB_GETITEMDATA, pdis->itemID, NULL));
 
-                WLAN_AVAILABLE_NETWORK wlanNetwork = this->lstWlanNetworks->Network[uItemRealID];
+                PWLAN_AVAILABLE_NETWORK pWlanNetwork = &this->lstWlanNetworks->Network[uItemRealID];
 
                 /* Step 1: draw listbox item's graphics, starting with the background */
                 if (!(pdis->itemState & ODS_SELECTED))
@@ -210,7 +210,7 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 }
 
                 /* Signal quality bar */
-                WLAN_SIGNAL_QUALITY ulSQ = wlanNetwork.wlanSignalQuality;
+                WLAN_SIGNAL_QUALITY ulSQ = pWlanNetwork->wlanSignalQuality;
                 int iSQResIcon = IDI_WLANICON;
 
                 if (16 <= ulSQ && ulSQ < 36)
@@ -239,7 +239,7 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 /* Network type */
                 int iBSSIcon = IDI_BSS_INFRA;
 
-                if (wlanNetwork.dot11BssType == dot11_BSS_type_independent)
+                if (pWlanNetwork->dot11BssType == dot11_BSS_type_independent)
                     iBSSIcon = IDI_BSS_ADHOC;
 
                 hicnRes = static_cast<HICON>(LoadImageW(wlanwiz_hInstance, MAKEINTRESOURCEW(iBSSIcon), IMAGE_ICON, 48, 48, LR_LOADTRANSPARENT));
@@ -255,7 +255,7 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 DestroyIcon(hicnRes);
 
                 /* Authentication standard strength */
-                if (wlanNetwork.bSecurityEnabled)
+                if (pWlanNetwork->bSecurityEnabled)
                 {
                     HICON hicnSecurity = LoadIconW(GetModuleHandleW(L"shell32.dll"), MAKEINTRESOURCEW(48)); /* lock icon */
 
@@ -268,7 +268,7 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                                DI_NORMAL);
 
                     /* WEP is not secure for decades */
-                    if (wlanNetwork.dot11DefaultAuthAlgorithm < DOT11_AUTH_ALGO_WPA)
+                    if (pWlanNetwork->dot11DefaultAuthAlgorithm < DOT11_AUTH_ALGO_WPA)
                     {
                         DrawIconEx(pdis->hDC,
                                    54, pdis->rcItem.top + 37,
@@ -305,9 +305,9 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 ATL::CStringW cswNetworkSecurityAlgo = L"";
                 ATL::CStringW cswNetworkSecurity = L"";
 
-                if (wlanNetwork.bSecurityEnabled)
+                if (pWlanNetwork->bSecurityEnabled)
                 {
-                    switch (wlanNetwork.dot11DefaultAuthAlgorithm)
+                    switch (pWlanNetwork->dot11DefaultAuthAlgorithm)
                     {
                     case DOT11_AUTH_ALGO_80211_OPEN:
                     case DOT11_AUTH_ALGO_80211_SHARED_KEY:
@@ -331,15 +331,15 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                     }
                 }
 
-                if (wlanNetwork.dot11BssType == dot11_BSS_type_infrastructure)
-                    cswNetworkSecurity.LoadStringW(wlanNetwork.bSecurityEnabled ? IDS_WLANWIZ_ENCRYPTED_AP : IDS_WLANWIZ_UNENCRYPTED_AP);
-                else if (wlanNetwork.dot11BssType == dot11_BSS_type_independent)
-                    cswNetworkSecurity.LoadStringW(wlanNetwork.bSecurityEnabled ? IDS_WLANWIZ_ENCRYPTED_IBSS : IDS_WLANWIZ_UNENCRYPTED_IBSS);
+                if (pWlanNetwork->dot11BssType == dot11_BSS_type_infrastructure)
+                    cswNetworkSecurity.LoadStringW(pWlanNetwork->bSecurityEnabled ? IDS_WLANWIZ_ENCRYPTED_AP : IDS_WLANWIZ_UNENCRYPTED_AP);
+                else if (pWlanNetwork->dot11BssType == dot11_BSS_type_independent)
+                    cswNetworkSecurity.LoadStringW(pWlanNetwork->bSecurityEnabled ? IDS_WLANWIZ_ENCRYPTED_IBSS : IDS_WLANWIZ_UNENCRYPTED_IBSS);
 
                 cswNetworkSecurity += cswNetworkSecurityAlgo;
 
                 TextOutW(pdis->hDC,
-                         wlanNetwork.bSecurityEnabled ? 72 : 52,
+                         pWlanNetwork->bSecurityEnabled ? 72 : 52,
                          pdis->rcItem.top + 38,
                          cswNetworkSecurity, cswNetworkSecurity.GetLength());
 
@@ -349,13 +349,13 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                 {
                     ATL::CStringW cswExpandedText = L"";
 
-                    if (wlanNetwork.dwFlags & WLAN_AVAILABLE_NETWORK_CONNECTED)
+                    if (pWlanNetwork->dwFlags & WLAN_AVAILABLE_NETWORK_CONNECTED)
                         cswExpandedText.LoadStringW(IDS_WLANWIZ_EXPAND_CONNECTED);
                     else
                     {
-                        if (wlanNetwork.bSecurityEnabled)
+                        if (pWlanNetwork->bSecurityEnabled)
                         {
-                            wlanNetwork.dot11DefaultAuthAlgorithm < DOT11_AUTH_ALGO_WPA
+                            pWlanNetwork->dot11DefaultAuthAlgorithm < DOT11_AUTH_ALGO_WPA
                                 ? cswExpandedText.LoadStringW(IDS_WLANWIZ_EXPAND_ENCRYPTED_OBSOLETE)
                                 : cswExpandedText.LoadStringW(IDS_WLANWIZ_EXPAND_ENCRYPTED);
                         }
