@@ -81,12 +81,19 @@ BOOL CWlanWizard::FindWlanDevice(ATL::CString sGUID)
 {
     /* Create WLAN client handle */
     DWORD dwResult = WlanOpenHandle(WLAN_API_VERSION_1_0, NULL, &this->dwNegotiatedVersion, &this->hWlanClient);
-
     if (FAILED(dwResult))
-        return 0; // TODO: handle it
+    {
+        DPRINT1("WlanOpenHandle failed: %lx\n", dwResult);
+        return FALSE;
+    }
     
     /* Get list of all WLAN devices */
     dwResult = WlanEnumInterfaces(this->hWlanClient, NULL, &this->lstWlanInterfaces);
+    if (FAILED(dwResult))
+    {
+        DPRINT1("WlanEnumInterfaces failed: %lx\n", dwResult);
+        return FALSE;
+    }
     
     /* If GUID was supplied on start, we will try to find a device that has it. */
     if (!sGUID.IsEmpty())
