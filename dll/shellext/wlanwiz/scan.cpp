@@ -128,8 +128,11 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
             {
                 if (dwKnownAPIdx == dwAP)
                     return false;
-
+#if defined(__REACTOS__) && defined(_MSC_VER)
+                bool bProfileNameIsSSID = ATL::CStringW(wlanNetWithProfile->strProfileName) == APNameToUnicode(&this->lstWlanNetworks->Network[dwAP].dot11Ssid);
+#else
                 bool bProfileNameIsSSID = std::wstring_view(wlanNetWithProfile->strProfileName) == std::wstring_view(APNameToUnicode(&this->lstWlanNetworks->Network[dwAP].dot11Ssid));
+#endif
                 bool bHasProfile = (this->lstWlanNetworks->Network[dwAP].dwFlags & WLAN_AVAILABLE_NETWORK_HAS_PROFILE) != 0;
 
                 return bProfileNameIsSSID && !bHasProfile;
@@ -165,14 +168,7 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
         for (const auto& dwNetwork : vecIndexesBySignalQuality)
         {
             PWLAN_AVAILABLE_NETWORK pWlanNetwork = &this->lstWlanNetworks->Network[dwNetwork];
-            std::wstring_view wsvSSID;
-
-            // Convert SSID from UTF-8 to UTF-16
-            int iSSIDLengthWide = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(pWlanNetwork->dot11Ssid.ucSSID), pWlanNetwork->dot11Ssid.uSSIDLength, NULL, 0);
-
-            ATL::CStringW cswSSID = ATL::CStringW(L"", iSSIDLengthWide);
-            MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(pWlanNetwork->dot11Ssid.ucSSID), pWlanNetwork->dot11Ssid.uSSIDLength, cswSSID.GetBuffer(), iSSIDLengthWide);
-            wsvSSID = std::wstring_view(cswSSID.GetBuffer());
+            ATL::CStringW cswSSID = APNameToUnicode(&pWlanNetwork->dot11Ssid);
 
             if (cswSSID.IsEmpty())
                 cswSSID.LoadStringW(IDS_WLANWIZ_HIDDEN_NETWORK);
