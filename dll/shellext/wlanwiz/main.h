@@ -4,7 +4,6 @@
  * PURPOSE:     ReactOS Wizard for Wireless Network Connections
  * COPYRIGHT:   Copyright 2024-2025 Vitaly Orekhov <vkvo2000@vivaldi.net>
  */
-
 #pragma once
 #include <set>
 
