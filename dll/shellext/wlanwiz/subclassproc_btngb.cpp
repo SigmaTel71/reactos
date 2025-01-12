@@ -2,7 +2,7 @@
  * PROJECT:     ReactOS Shell
  * LICENSE:     LGPL-2.1-or-later (https://spdx.org/licenses/LGPL-2.1-or-later)
  * PURPOSE:     ReactOS Wizard for Wireless Network Connections (Sidebar GroupBox Subclassed Procedures)
- * COPYRIGHT:   Copyright 2024 Vitaly Orekhov <vkvo2000@vivaldi.net>
+ * COPYRIGHT:   Copyright 2024-2025 Vitaly Orekhov <vkvo2000@vivaldi.net>
  */
 #include "main.h"
 
