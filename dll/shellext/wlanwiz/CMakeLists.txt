@@ -26,6 +26,6 @@ add_library(wlanwiz MODULE
 set_module_type(wlanwiz win32dll UNICODE)
 set_target_cpp_properties(wlanwiz WITH_EXCEPTIONS)
 target_link_libraries(wlanwiz cpprt cppstl uuid atl_classes)
-add_importlibs(wlanwiz version gdi32 user32 advapi32 comctl32 ole32 msvcrt msimg32 kernel32 shell32 shlwapi ntdll uxtheme wlanapi)
+add_importlibs(wlanwiz version gdi32 user32 advapi32 comctl32 ole32 msvcrt msimg32 kernel32 shell32 shlwapi ntdll uxtheme wlanapi xmllite)
 add_cd_file(TARGET wlanwiz DESTINATION reactos/system32 FOR all)
 set_property(TARGET wlanwiz PROPERTY CXX_STANDARD 20)

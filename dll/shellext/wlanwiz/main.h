@@ -33,6 +33,7 @@
 #include "resource.h"
 
 #define IDT_SCANNING_NETWORKS 700
+#define IDI_SHELL32_FAVORITES 44
 
 enum WLAN_SCAN_STATES
 {
@@ -200,6 +201,7 @@ private:
 	HWND CreateToolTip(_In_ int toolID);
 	static DWORD WINAPI ScanNetworksThread(_In_ LPVOID lpParameter);
 	static ATL::CStringW APNameToUnicode(_In_ PDOT11_SSID dot11Ssid);
+	static ATL::CComPtr<IStream> CreateDataStream(const PVOID pvData, size_t size);
 	void TryInsertToAdHoc(_Inout_ std::set<DWORD>& setAdHoc, _In_ DWORD dwIndex);
 	void TryInsertToKnown(_Inout_ std::set<DWORD>& setProfiles, _In_ DWORD dwIndex);
 	DWORD TryFindConnected(_In_ DWORD dwIndex);

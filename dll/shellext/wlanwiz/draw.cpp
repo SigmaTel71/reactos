@@ -5,6 +5,7 @@
  * COPYRIGHT:   Copyright 2024-2025 Vitaly Orekhov <vkvo2000@vivaldi.net>
  */
 #include "main.h"
+#include <xmllite.h>
 
 LRESULT CWlanWizard::OnMeasureItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
@@ -97,7 +98,7 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                     HICON hSidebarIcon = NULL;
 
                     wParam == IDC_WLANWIZ_PREFERRED_APS
-                        ? hSidebarIcon = LoadIconW(GetModuleHandleW(L"shell32.dll"), MAKEINTRESOURCE(44)) /* 'Favorites' icon */
+                        ? hSidebarIcon = LoadIconW(GetModuleHandleW(L"shell32.dll"), MAKEINTRESOURCE(IDI_SHELL32_FAVORITES))
                         : hSidebarIcon = LoadIconW(wlanwiz_hInstance, MAKEINTRESOURCEW(wParam + 20));
 
                     DrawIconEx(this->hThemeEB ? hDCBtn : pdis->hDC,
@@ -372,6 +373,82 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                     };
 
                     DrawTextW(pdis->hDC, cswExpandedText, cswExpandedText.GetLength(), &rcExpandedText, DT_WORDBREAK | DT_LEFT);
+                }
+
+                /* Connection state or preference as set in saved profile */
+                ATL::CStringW cswConnState;
+                GUID interfaceGuid;
+                LPWSTR pstrProfileXml = NULL;
+                DWORD dwFlags = 0, dwGrantedAccess = WLAN_READ_ACCESS;
+                IIDFromString(this->m_sGUID, &interfaceGuid);
+
+                if (   wcslen(pWlanNetwork->strProfileName)
+                    && SUCCEEDED(WlanGetProfile(this->hWlanClient, &interfaceGuid, pWlanNetwork->strProfileName, NULL, &pstrProfileXml, &dwFlags, &dwGrantedAccess))
+                    && pstrProfileXml != NULL)
+                {
+                    ATL::CComPtr<IStream> xmlStream = CreateDataStream(pstrProfileXml, wcslen(pstrProfileXml));                    
+                    ATL::CComPtr<IXmlReader> xmlReader;
+                    WlanFreeMemory(pstrProfileXml);
+                    
+                    CreateXmlReader(IID_IXmlReader, reinterpret_cast<LPVOID*>(&xmlReader), 0);
+                    xmlReader->SetInput(xmlStream);
+
+                    bool bNodeFound = false;
+                    XmlNodeType xnType = XmlNodeType_None;
+                    while (!bNodeFound)
+                    {
+                        LPCWSTR pwszLocalName;
+                        xmlReader->Read(&xnType);
+
+                        switch(xnType)
+                        {
+                        case XmlNodeType_Element:
+                        {
+                            xmlReader->GetLocalName(&pwszLocalName, NULL);
+
+                            if (pwszLocalName && wcsicmp(pwszLocalName, L"connectionMode") == 0)
+                            {
+                                LPCWSTR pwszConnectionMode;
+                                xmlReader->GetValue(&pwszConnectionMode, NULL);
+
+                                cswConnState.LoadStringW(wcsicmp(pwszConnectionMode, L"auto") == 0
+                                    ? IDS_WLANWIZ_CONNECTED_AUTO
+                                    : IDS_WLANWIZ_CONNECTED_MANU);
+
+                                RECT rcConnMode =
+                                {
+                                    .left = pdis->rcItem.right - 70,
+                                    .top = pdis->rcItem.top + 3,
+                                    .right = pdis->rcItem.right - 25,
+                                    .bottom = pdis->rcItem.top + 22
+                                };
+
+                                DrawTextW(pdis->hDC, cswConnState, cswConnState.GetLength(), &rcConnMode, DT_RIGHT);
+
+                                HICON hFav = LoadIconW(GetModuleHandleW(L"shell32.dll"), MAKEINTRESOURCE(IDI_SHELL32_FAVORITES));
+
+                                DrawIconEx(pdis->hDC,
+                                    pdis->rcItem.right - 20, pdis->rcItem.top + 3,
+                                    hFav,
+                                    16, 16,
+                                    0,
+                                    0,
+                                    DI_NORMAL
+                                );
+
+                                DestroyIcon(hFav);
+                                bNodeFound = true;
+                            }
+
+                            break;
+                        }
+                        default:
+                            break;
+                        }
+                    }
+
+                    xmlReader.Release();
+                    xmlStream.Release();
                 }
 
                 SetTextColor(pdis->hDC, crItemText);
