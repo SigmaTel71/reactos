@@ -83,3 +83,32 @@ HWND CWlanWizard::CreateToolTip(_In_ int nID)
 
     return hWndTip;
 }
+
+ATL::CComPtr<IStream> CWlanWizard::CreateDataStream(const PVOID pvData, size_t size)
+{
+    ATL::CComPtr<IStream> stream;
+    HRESULT hr;
+
+    HGLOBAL hGlobal = GlobalAlloc(GHND, size);
+
+    if (FAILED(HRESULT_FROM_WIN32(GetLastError())))
+    {
+        DPRINT1("GlobalAlloc failed: 0x%lx\n", HRESULT_FROM_WIN32(GetLastError()));
+        return nullptr;
+    }
+
+    PVOID ptr = GlobalLock(hGlobal);
+    memcpy(ptr, pvData, size);
+
+    hr = CreateStreamOnHGlobal(hGlobal, TRUE, &stream);
+
+    if (FAILED(hr))
+    {
+        DPRINT1("CreateStreamOnHGlobal failed: 0x%lx\n", hr);
+        return nullptr;
+    }
+
+    GlobalUnlock(hGlobal);
+
+    return stream;
+}
