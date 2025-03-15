@@ -415,15 +415,32 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
                                     ? IDS_WLANWIZ_CONNECTED_AUTO
                                     : IDS_WLANWIZ_CONNECTED_MANU);
 
-                                RECT rcConnMode =
+                                RECT rConnMode =
                                 {
-                                    .left = pdis->rcItem.right - 70,
-                                    .top = pdis->rcItem.top + 3,
+                                    .left = pdis->rcItem.right - 100,
+                                    .top = pdis->rcItem.top + 4,
                                     .right = pdis->rcItem.right - 25,
                                     .bottom = pdis->rcItem.top + 22
                                 };
 
-                                DrawTextW(pdis->hDC, cswConnState, cswConnState.GetLength(), &rcConnMode, DT_RIGHT);
+                                RECT rCalc = rConnMode;
+
+                                /* Network relation had to be drawn bold and painted in COLOR_3DFACE
+                                 * out of queue and this breaks the pipeline. Refactoring help needed!
+                                 */
+                                COLORREF oldRelationColor = SetTextColor(pdis->hDC, GetSysColor(pdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHTTEXT : COLOR_GRAYTEXT));
+                                this->lfCaption.lfWeight = FW_BOLD;
+                                hfCaption = CreateFontIndirectW(&this->lfCaption);
+                                
+                                hOld = SelectObject(pdis->hDC, hfCaption);                                
+                                DrawTextW(pdis->hDC, cswConnState, cswConnState.GetLength(), &rCalc, DT_CALCRECT | DT_RIGHT | DT_NOCLIP | DT_WORDBREAK);
+                                DrawTextW(pdis->hDC, cswConnState, cswConnState.GetLength(), &rConnMode, DT_RIGHT | DT_NOCLIP | DT_WORDBREAK);
+                                SelectObject(pdis->hDC, hOld);
+                                
+                                DeleteObject(hfCaption);
+                                this->lfCaption.lfWeight = FW_NORMAL;
+                                hfCaption = CreateFontIndirectW(&this->lfCaption);
+                                SetTextColor(pdis->hDC, oldRelationColor);
 
                                 HICON hFav = LoadIconW(GetModuleHandleW(L"shell32.dll"), MAKEINTRESOURCE(IDI_SHELL32_FAVORITES));
 
