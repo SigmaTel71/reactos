@@ -1525,9 +1525,71 @@ public:
             case APPCOMMAND_VOLUME_MUTE:
             case APPCOMMAND_VOLUME_DOWN:
             case APPCOMMAND_VOLUME_UP:
-                // TODO: Try IMMDeviceEnumerator::GetDefaultAudioEndpoint first and then fall back to mixer.
-                FIXME("Call the mixer API to change the global volume\n");
+            {
+#ifdef MMDEVAPI_AVAILABLE
+                CComPtr<IMMDevice> immDev;
+                CComPtr<IMMDeviceEnumerator> immDevEnumerator;
+                CComPtr<IAudioEndpointVolume> epVol;
+                BOOL bMuted;
+
+                HRESULT hr = CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_PPV_ARG(IMMDeviceEnumerator, &immDevEnumerator));
+
+                if (FAILED_UNEXPECTEDLY(hr))
+                {
+                    ERR("HandleAppCommand: Failed to create IMMDeviceEnumerator instance: %x\n", hr);
+                    immDevEnumerator.Release();
+                    return TRUE;
+                }
+
+                hr = immDevEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &immDev);
+
+                if (hr == ERROR_NOT_FOUND || !immDev)
+                {
+                    FIXME("HandleAppCommand: Call the mixer API to change the global volume, if the device might be there\n");
+                    immDev.Release();
+                    immDevEnumerator.Release();
+                    return TRUE;
+                }
+
+                hr = immDev->Activate(IID_IAudioEndpointVolume, CLSCTX_ALL, NULL, (PVOID*)&epVol);
+
+                if (hr != S_OK)
+                {
+                    ERR("HandleAppCommand: Cannot create an interface: %x\n", hr);
+                    immDev.Release();
+                    immDevEnumerator.Release();
+                    return TRUE;
+                }
+
+                hr = epVol->GetMute(&bMuted);
+
+                /* On Windows, if output device is muted, it will be
+                 * -  muted  when volume is decreased
+                 * - unmuted when volume is increased.
+                 */
+
+                if (uAppCmd == APPCOMMAND_VOLUME_UP)
+                {
+                    if (bMuted)
+                        epVol->SetMute(FALSE, NULL);
+                    
+                    epVol->VolumeStepUp(NULL);
+                }
+                else if (uAppCmd == APPCOMMAND_VOLUME_DOWN)
+                {
+                    epVol->VolumeStepDown(NULL);
+                }
+                else if (uAppCmd == APPCOMMAND_VOLUME_MUTE)
+                {
+                    epVol->SetMute(!bMuted, NULL);
+                }
+
+                epVol.Release();
+                immDev.Release();
+                immDevEnumerator.Release();
+#endif
                 return TRUE;
+            }
             case APPCOMMAND_BROWSER_SEARCH:
                 return SHFindFiles(NULL, NULL);
         }

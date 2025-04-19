@@ -31,6 +31,11 @@
 #include <atlstr.h>
 #include <atlcoll.h>
 #include <atlsimpcoll.h>
+#ifdef MMDEVAPI_AVAILABLE
+#include <audioclient.h>
+#include <endpointvolume.h>
+#include <mmdeviceapi.h>
+#endif
 #include <shellapi.h>
 #include <shlobj.h>
 #include <shlwapi.h>
