@@ -60,6 +60,8 @@ public:
     static void RunDll(PCSTR Dll, PCSTR Parameters);
     static void RunAccessCpl(PCSTR Parameters);
 
+    LPARAM lpVolCmd;
+
 protected:
     BOOL ProcessWindowMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT &lResult, DWORD dwMsgMapID = 0);
 
