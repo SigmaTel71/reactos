@@ -173,7 +173,32 @@ HRESULT STDMETHODCALLTYPE Volume_Update(_In_ CSysTray * pSysTray)
     PrevState = g_IsMute;
     Volume_IsMute();
 
-    if (PrevState != g_IsMute)
+    // Unmute if volume is increased or unmuted explicitly
+    if (pSysTray->lpVolCmd)
+    {
+        g_IsMute = pSysTray->lpVolCmd == APPCOMMAND_VOLUME_UP ? FALSE : !g_IsMute;
+
+        MIXERCONTROLDETAILS_BOOLEAN mxcdMute = {0};
+        mxcdMute.fValue = g_IsMute;
+
+        MIXERCONTROLDETAILS mxcd = {0};
+        mxcd.cbStruct = sizeof(mxcd);
+        mxcd.cChannels = 1;
+        mxcd.hwndOwner = NULL;
+        mxcd.dwControlID = g_muteControlID;
+        mxcd.paDetails = &mxcdMute;
+        mxcd.cbDetails = sizeof(mxcdMute);
+
+        MMRESULT mmres = mixerSetControlDetails((HMIXEROBJ)UlongToHandle(g_mixerId), &mxcd, MIXER_SETCONTROLDETAILSF_VALUE);
+
+        if (mmres)
+        {
+            ERR("Volume_Update failed at MMixer: %d\n", mmres);
+            return E_FAIL;
+        }
+    }
+
+    if (pSysTray->lpVolCmd == APPCOMMAND_VOLUME_MUTE || PrevState != g_IsMute)
     {
         WCHAR strTooltip[128];
         HICON icon;
@@ -188,6 +213,7 @@ HRESULT STDMETHODCALLTYPE Volume_Update(_In_ CSysTray * pSysTray)
             LoadStringW(g_hInstance, IDS_VOL_VOLUME, strTooltip, _countof(strTooltip));
         }
 
+        pSysTray->lpVolCmd = 0;        
         return pSysTray->NotifyIcon(NIM_MODIFY, ID_ICON_VOLUME, icon, strTooltip);
     }
     else
