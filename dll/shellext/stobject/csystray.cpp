@@ -359,6 +359,11 @@ BOOL CSysTray::ProcessWindowMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
         {
             MouseKeys_Update(this);
         }
+        else if (wParam == HSHELL_APPCOMMAND && ((GET_APPCOMMAND_LPARAM(lParam) >= APPCOMMAND_VOLUME_DOWN) || GET_APPCOMMAND_LPARAM(lParam) <= APPCOMMAND_VOLUME_UP))
+        {
+            lpVolCmd = GET_APPCOMMAND_LPARAM(lParam);
+            Volume_Update(this);
+        }
         lResult = 0L;
         return TRUE;
     }
