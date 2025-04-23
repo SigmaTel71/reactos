@@ -193,8 +193,47 @@ HRESULT STDMETHODCALLTYPE Volume_Update(_In_ CSysTray * pSysTray)
 
         if (mmres)
         {
-            ERR("Volume_Update failed at MMixer: %d\n", mmres);
+            ERR("Volume_Update failed at updating mute state: %d\n", mmres);
             return E_FAIL;
+        }
+
+        // Update volume depending on pressed button.
+        if (pSysTray->lpVolCmd != APPCOMMAND_VOLUME_MUTE)
+        {
+            MIXERLINECONTROLSW mxlc;
+            MIXERCONTROLW mxctrl;
+
+            mxlc.cbStruct = sizeof(mxlc);
+            mxlc.dwLineID = g_mixerLineID;
+            mxlc.cControls = 1;
+            mxlc.dwControlType = MIXERCONTROL_CONTROLTYPE_VOLUME;
+            mxlc.pamxctrl = &mxctrl;
+            mxlc.cbmxctrl = sizeof(mxctrl);
+
+            mmres = mixerGetLineControlsW((HMIXEROBJ)UlongToHandle(g_mixerId), &mxlc, MIXER_GETLINECONTROLSF_ONEBYTYPE);
+
+            if (mmres)
+            {
+                ERR("Volume_Update failed retrieving line control: %d\n", mmres);
+                return E_FAIL;
+            }
+
+            MIXERCONTROLDETAILS_UNSIGNED mxcdVolume;
+
+            mxcd.dwControlID = mxctrl.dwControlID;
+            mxcd.paDetails = &mxcdVolume;
+            mxcd.cbDetails = sizeof(mxcdVolume);
+
+            mmres = mixerGetControlDetailsW((HMIXEROBJ)UlongToHandle(g_mixerId), &mxcd, MIXER_GETCONTROLDETAILSF_VALUE);
+
+            if (mmres)
+            {
+                ERR("Volume_Update failed reading current volume: %d\n", mmres);
+                return E_FAIL;
+            }
+
+            pSysTray->lpVolCmd = 0;
+            DPRINTF("Volume_Update: Current volume is %d\n", mxcdVolume.dwValue);
         }
     }
 
