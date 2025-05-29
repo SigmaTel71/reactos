@@ -32,7 +32,7 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
 
     /* Check if the adapter is enabled, both hardware and software */
     IIDFromString(this->m_sGUID, &gCurAdapter);
-    WlanQueryInterface(this->hWlanClient,
+    DWORD dwResult = WlanQueryInterface(this->hWlanClient,
                        &gCurAdapter,
                        wlan_intf_opcode_radio_state,
                        NULL,
@@ -40,9 +40,17 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
                        reinterpret_cast<PVOID*>(&pWRSCurAdapter),
                        &wovtCurrAdapter);
 
+    if (pWRSCurAdapter == NULL)
+    {
+        DPRINT1("Cannot determine radio state due to 0x%lx\n", dwResult);
+    }
+    else
+    {
     DPRINT("WLAN adapter radio status: hardware %s, software %s\n",
         pWRSCurAdapter->PhyRadioState[0].dot11HardwareRadioState == dot11_radio_state_on ? "on" : "off",
         pWRSCurAdapter->PhyRadioState[0].dot11SoftwareRadioState == dot11_radio_state_on ? "on" : "off");
+    }
+
 
     if (!(   pWRSCurAdapter->PhyRadioState[0].dot11SoftwareRadioState == dot11_radio_state_on
           && pWRSCurAdapter->PhyRadioState[0].dot11HardwareRadioState == dot11_radio_state_on))
