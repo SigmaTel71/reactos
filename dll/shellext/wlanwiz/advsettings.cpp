@@ -10,7 +10,6 @@ LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl
 {
 	ATL::CStringW cswNetworkAdapterPath = L"";
 	LPOLESTR lpwszNetConCLSID;
-#if !defined(__REACTOS__)
 	CComPtr<IShellFolder> sfConn;
 	LPITEMIDLIST pidl = NULL;
 	LPCITEMIDLIST pidlChild = NULL;
@@ -30,10 +29,7 @@ LRESULT CWlanWizard::OnAdvancedSettings(WORD wNotifyCode, WORD wID, HWND hWndCtl
 
 	ILFree(pidl);
 	sfConn.Release();
-#else
-	if (FAILED(StringFromIID(CLSID_NetworkConnections, &lpwszNetConCLSID)))
-		goto Exit;
-#endif
+
 	cswNetworkAdapterPath.Format(L"::%s\\::%s", lpwszNetConCLSID, this->m_sGUID);
 
 	/* NT 5.1 & 5.2 would still try to open the property sheet if you unplug the adapter. */
