@@ -6,21 +6,8 @@
  */
 #include "main.h"
 
-/* TODO: Insertion sort, maybe? Or come back to STL sort, gladly C++20 is here to help */
-void CWlanWizard::SortScannedNetworks(ATL::CAtlList<ATL::CSimpleArray<UINT>>& calcsa)
-{
-    for (UINT i = 0; i < calcsa.GetCount(); ++i)
-    {
-        for (UINT i = 0; i < calcsa.GetCount() - 1; ++i)
-        {
-            auto left = calcsa.GetAt(calcsa.FindIndex(i));
-            auto right = calcsa.GetAt(calcsa.FindIndex(i + 1));
-
-            if (left[0] < right[0])
-                calcsa.SwapElements(calcsa.FindIndex(i), calcsa.FindIndex(i + 1));
-        }
-    }
-}
+#include <string>
+#include <unordered_set>
 
 LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
 {
@@ -67,66 +54,71 @@ LRESULT CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BO
     m_SidebarButtonAS.EnableWindow();
     m_SidebarButtonSN.EnableWindow();
 
+    /*
+     * WIP:  Single pass sorting of discovered networks.
+     * TODO: Restore ad-hoc network positioning in the end of the list.
+     */     
     if (this->lstWlanNetworks->dwNumberOfItems > 0)
     {
-        m_ListboxWLAN.EnableWindow();
-        m_ConnectButton.EnableWindow();
-
-        /* Show discovered networks */
-        RECT rc;
-        m_ListboxWLAN.GetClientRect(&rc);
-
         /* Add discovered networks to listbox and sort networks by signal level */
-        ATL::CAtlList<ATL::CSimpleArray<UINT>> calIndexToSignalQuality, calIndexToSignalQualityAdHoc;
-
+        std::unordered_set<std::wstring_view> ucAPsWithProfiles;
+        WLAN_SIGNAL_QUALITY ulPrevSignalQuality = 0, ulWorstSignalQuality = 100;
+                
         for (;
             this->lstWlanNetworks->dwIndex <= this->lstWlanNetworks->dwNumberOfItems - 1;
-            this->lstWlanNetworks->dwIndex++)
+            ++this->lstWlanNetworks->dwIndex)
         {
-            ATL::CSimpleArray<UINT> csaIndexAndQuality;
             WLAN_AVAILABLE_NETWORK wlanNetwork = this->lstWlanNetworks->Network[this->lstWlanNetworks->dwIndex];
-            csaIndexAndQuality.Add(wlanNetwork.wlanSignalQuality);
-            csaIndexAndQuality.Add(this->lstWlanNetworks->dwIndex);
+            std::wstring_view wsvSSID;
+            int iInsertAt = -1;
 
-            if (wlanNetwork.dot11BssType == dot11_BSS_type_infrastructure)
-                calIndexToSignalQuality.AddTail(csaIndexAndQuality);
-            else if (wlanNetwork.dot11BssType == dot11_BSS_type_independent)
-                calIndexToSignalQualityAdHoc.AddTail(csaIndexAndQuality);
-        }
+            // Convert SSID from UTF-8 to UTF-16
+            int iSSIDLengthWide = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(wlanNetwork.dot11Ssid.ucSSID), wlanNetwork.dot11Ssid.uSSIDLength, NULL, 0);
 
-        SortScannedNetworks(calIndexToSignalQuality);
-        SortScannedNetworks(calIndexToSignalQualityAdHoc);
+            ATL::CStringW cswSSID = ATL::CStringW(L"", iSSIDLengthWide);
+            MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<LPCSTR>(wlanNetwork.dot11Ssid.ucSSID), wlanNetwork.dot11Ssid.uSSIDLength, cswSSID.GetBuffer(), iSSIDLengthWide);
+            wsvSSID = std::wstring_view(cswSSID.GetBuffer());
 
-        /* Ad hoc networks are shown last */
-        calIndexToSignalQuality.AddTailList(&calIndexToSignalQualityAdHoc);
+            // TODO: filter access points by profile
+            if (ucAPsWithProfiles.find(wsvSSID) != ucAPsWithProfiles.end())
+                continue;
 
-        POSITION posIAQ = calIndexToSignalQuality.GetHeadPosition();
+            /* This allows discarding duplicated entries that with APs we had already connected earlier */
+            if (wlanNetwork.dwFlags & WLAN_AVAILABLE_NETWORK_HAS_PROFILE)
+                ucAPsWithProfiles.emplace(wsvSSID);
 
-        while (posIAQ != NULL)
-        {
-            auto csaIAQ = calIndexToSignalQuality.GetNext(posIAQ);
+            /* Sort by descending signal order */
+            if (this->lstWlanNetworks->dwIndex == 0 || wlanNetwork.wlanSignalQuality > ulPrevSignalQuality)
+                iInsertAt = 0;
+            else if (wlanNetwork.wlanSignalQuality < ulPrevSignalQuality)
+                iInsertAt = 1;
 
-            ATL::CStringW cswWlanNetworkName = "";
-            cswWlanNetworkName = CA2W(reinterpret_cast<LPCSTR>(this->lstWlanNetworks->Network[csaIAQ[1]].dot11Ssid.ucSSID));
-            
-            if (cswWlanNetworkName.IsEmpty())
-                cswWlanNetworkName.LoadStringW(IDS_WLANWIZ_HIDDEN_NETWORK);
-            else
-                cswWlanNetworkName = cswWlanNetworkName.Left(DOT11_SSID_MAX_LENGTH);
+            if (cswSSID.IsEmpty())
+                cswSSID.LoadStringW(IDS_WLANWIZ_HIDDEN_NETWORK);
 
-            LRESULT iItemIdx = m_ListboxWLAN.SendMessageW(LB_ADDSTRING,
-                NULL,
-                reinterpret_cast<LPARAM>(cswWlanNetworkName.GetBuffer()));
+            LRESULT iItemIdx = m_ListboxWLAN.SendMessageW(LB_INSERTSTRING,
+                iInsertAt,
+                reinterpret_cast<LPARAM>(cswSSID.GetBuffer()));
 
             m_ListboxWLAN.SendMessageW(LB_SETITEMDATA,
                 iItemIdx,
-                static_cast<LPARAM>(csaIAQ[1]));
+                static_cast<LPARAM>(this->lstWlanNetworks->dwIndex));
+
+            ulPrevSignalQuality = wlanNetwork.wlanSignalQuality;
+
+            if (ulPrevSignalQuality < ulWorstSignalQuality)
+                ulWorstSignalQuality = ulPrevSignalQuality;
         }
     }
 
+    /* Show discovered networks */
+    RECT rc;
+    m_ListboxWLAN.EnableWindow();
+    m_ListboxWLAN.GetClientRect(&rc);
     m_ListboxWLAN.Invalidate();
     m_ListboxWLAN.SetFocus();
 
+    m_ConnectButton.EnableWindow();
     return FALSE;
 }
 

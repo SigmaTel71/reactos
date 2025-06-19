@@ -166,7 +166,6 @@ private:
 
 	HWND CreateToolTip(int toolID);
 	static DWORD WINAPI ScanNetworksThread(_In_ LPVOID lpParameter);
-	void SortScannedNetworks(ATL::CAtlList<ATL::CSimpleArray<UINT>>& calcsa);
 
 	LRESULT OnInitDialog(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);

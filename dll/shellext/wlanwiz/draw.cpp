@@ -156,7 +156,7 @@ LRESULT CWlanWizard::OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& b
             if (this->lstWlanNetworks && this->lstWlanNetworks->dwNumberOfItems > 0 && pdis->CtlID == IDC_WLANWIZ_LISTBOX)
             {
                 UINT uSSIDLength = static_cast<UINT>(SendDlgItemMessageW(pdis->CtlID, LB_GETTEXTLEN, pdis->itemID, NULL));
-                UINT uItemRealID = static_cast<UINT>(SendDlgItemMessageW(pdis->CtlID, LB_GETITEMDATA, pdis->itemID, NULL));
+                DWORD uItemRealID = static_cast<DWORD>(SendDlgItemMessageW(pdis->CtlID, LB_GETITEMDATA, pdis->itemID, NULL));
 
                 WLAN_AVAILABLE_NETWORK wlanNetwork = this->lstWlanNetworks->Network[uItemRealID];
 
