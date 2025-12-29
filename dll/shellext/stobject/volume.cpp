@@ -7,6 +7,7 @@
  */
 
 #include "precomp.h"
+#include "winuser.h"
 
 #include <mmddk.h>
 
@@ -174,69 +175,93 @@ HRESULT STDMETHODCALLTYPE Volume_Update(_In_ CSysTray * pSysTray)
     Volume_IsMute();
 
     // Unmute if volume is increased or unmuted explicitly
-    if (pSysTray->lpVolCmd)
-    {
+    if (!pSysTray->lpVolCmd)
+        return S_OK;
+
+    if (pSysTray->lpVolCmd == APPCOMMAND_VOLUME_UP || pSysTray->lpVolCmd == APPCOMMAND_VOLUME_MUTE)
         g_IsMute = pSysTray->lpVolCmd == APPCOMMAND_VOLUME_UP ? FALSE : !g_IsMute;
 
-        MIXERCONTROLDETAILS_BOOLEAN mxcdMute = {0};
-        mxcdMute.fValue = g_IsMute;
+    MIXERCONTROLDETAILS_BOOLEAN mxcdMute{};
+    mxcdMute.fValue = g_IsMute;
 
-        MIXERCONTROLDETAILS mxcd = {0};
-        mxcd.cbStruct = sizeof(mxcd);
-        mxcd.cChannels = 1;
-        mxcd.hwndOwner = NULL;
-        mxcd.dwControlID = g_muteControlID;
-        mxcd.paDetails = &mxcdMute;
-        mxcd.cbDetails = sizeof(mxcdMute);
+    MIXERCONTROLDETAILS mxcd{};
+    mxcd.cbStruct = sizeof(mxcd);
+    mxcd.cChannels = 1;
+    mxcd.hwndOwner = NULL;
+    mxcd.dwControlID = g_muteControlID;
+    mxcd.paDetails = &mxcdMute;
+    mxcd.cbDetails = sizeof(mxcdMute);
 
-        MMRESULT mmres = mixerSetControlDetails((HMIXEROBJ)UlongToHandle(g_mixerId), &mxcd, MIXER_SETCONTROLDETAILSF_VALUE);
+    MMRESULT mmres = mixerSetControlDetails((HMIXEROBJ)UlongToHandle(g_mixerId), &mxcd, MIXER_SETCONTROLDETAILSF_VALUE);
 
-        if (mmres)
+    if (mmres != MMSYSERR_NOERROR)
+    {
+        ERR("Volume_Update failed at updating mute state: %d\n", mmres);
+        return E_FAIL;
+    }
+
+    if (pSysTray->lpVolCmd == APPCOMMAND_VOLUME_UP || pSysTray->lpVolCmd == APPCOMMAND_VOLUME_DOWN)
+    {
+        MIXERLINECONTROLSW mxlc{};
+        MIXERCONTROLW mxctrl{};
+
+        mxlc.cbStruct = sizeof(mxlc);
+        mxlc.dwLineID = g_mixerLineID;
+        mxlc.cControls = 1;
+        mxlc.dwControlType = MIXERCONTROL_CONTROLTYPE_VOLUME;
+        mxlc.pamxctrl = &mxctrl;
+        mxlc.cbmxctrl = sizeof(mxctrl);
+
+        mmres = mixerGetLineControlsW((HMIXEROBJ)UlongToHandle(g_mixerId), &mxlc, MIXER_GETLINECONTROLSF_ONEBYTYPE);
+
+        if (mmres != MMSYSERR_NOERROR)
         {
-            ERR("Volume_Update failed at updating mute state: %d\n", mmres);
+            ERR("Volume_Update failed retrieving line control: %d\n", mmres);
             return E_FAIL;
         }
 
-        // Update volume depending on pressed button.
-        if (pSysTray->lpVolCmd != APPCOMMAND_VOLUME_MUTE)
+        MIXERCONTROLDETAILS_UNSIGNED mxcdVolume{};
+
+        mxcd.dwControlID = mxctrl.dwControlID;
+        mxcd.paDetails = &mxcdVolume;
+        mxcd.cbDetails = sizeof(mxcdVolume);
+
+        mmres = mixerGetControlDetailsW((HMIXEROBJ)UlongToHandle(g_mixerId), &mxcd, MIXER_GETCONTROLDETAILSF_VALUE);
+
+        if (mmres != MMSYSERR_NOERROR)
         {
-            MIXERLINECONTROLSW mxlc;
-            MIXERCONTROLW mxctrl;
+            ERR("Volume_Update failed reading current volume: %d\n", mmres);
+            return E_FAIL;
+        }
 
-            mxlc.cbStruct = sizeof(mxlc);
-            mxlc.dwLineID = g_mixerLineID;
-            mxlc.cControls = 1;
-            mxlc.dwControlType = MIXERCONTROL_CONTROLTYPE_VOLUME;
-            mxlc.pamxctrl = &mxctrl;
-            mxlc.cbmxctrl = sizeof(mxctrl);
+        DPRINTF("Volume_Update: Current volume is %d, volume is expected to go %s\n", mxcdVolume.dwValue, pSysTray->lpVolCmd == APPCOMMAND_VOLUME_UP ? "up" : "down");
+        DPRINTF("Volume_Update: Control step: %u | Bounds: (%u, %u)\n", mxctrl.Metrics.cSteps, mxctrl.Bounds.dwMinimum, mxctrl.Bounds.dwMaximum);
 
-            mmres = mixerGetLineControlsW((HMIXEROBJ)UlongToHandle(g_mixerId), &mxlc, MIXER_GETLINECONTROLSF_ONEBYTYPE);
+        /* 
+         * In perfect conditions, there must be exactly 50 steps when changing volume.
+         * The formula of mxctrl.Metrics.cSteps * 7, assuming cSteps == 192, gives us 48 whole steps.
+         * In close to bounds situations we have odd results, so the volume value is explicitly set
+         * to 65535 or 0 depending on volume change direction.
+         */
+        if (pSysTray->lpVolCmd == APPCOMMAND_VOLUME_UP)
+            mxcdVolume.dwValue += mxctrl.Metrics.cSteps * 7;
+        else
+            mxcdVolume.dwValue -= mxctrl.Metrics.cSteps * 7;
 
-            if (mmres)
-            {
-                ERR("Volume_Update failed retrieving line control: %d\n", mmres);
-                return E_FAIL;
-            }
+        mmres = mixerSetControlDetails((HMIXEROBJ)UlongToHandle(g_mixerId), &mxcd, MIXER_GETCONTROLDETAILSF_VALUE);
 
-            MIXERCONTROLDETAILS_UNSIGNED mxcdVolume;
-
-            mxcd.dwControlID = mxctrl.dwControlID;
-            mxcd.paDetails = &mxcdVolume;
-            mxcd.cbDetails = sizeof(mxcdVolume);
-
-            mmres = mixerGetControlDetailsW((HMIXEROBJ)UlongToHandle(g_mixerId), &mxcd, MIXER_GETCONTROLDETAILSF_VALUE);
-
-            if (mmres)
-            {
-                ERR("Volume_Update failed reading current volume: %d\n", mmres);
-                return E_FAIL;
-            }
-
-            pSysTray->lpVolCmd = 0;
+        if (mmres != MMSYSERR_NOERROR)
+        {
+            ERR("Volume_Update failed writing current volume: %d\n", mmres);
+            return E_FAIL;
+        }
+        else
+        {
             DPRINTF("Volume_Update: Current volume is %d\n", mxcdVolume.dwValue);
         }
     }
 
+    // Update system tray icon depending on new volume settings
     if (pSysTray->lpVolCmd == APPCOMMAND_VOLUME_MUTE || PrevState != g_IsMute)
     {
         WCHAR strTooltip[128];
@@ -255,10 +280,9 @@ HRESULT STDMETHODCALLTYPE Volume_Update(_In_ CSysTray * pSysTray)
         pSysTray->lpVolCmd = 0;        
         return pSysTray->NotifyIcon(NIM_MODIFY, ID_ICON_VOLUME, icon, strTooltip);
     }
-    else
-    {
-        return S_OK;
-    }
+ 
+    pSysTray->lpVolCmd = 0;
+    return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE Volume_Shutdown(_In_ CSysTray * pSysTray)
