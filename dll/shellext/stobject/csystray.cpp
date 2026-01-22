@@ -9,6 +9,7 @@
 
 #include "precomp.h"
 
+#include <mmddk.h>
 #include <regstr.h>
 #include <undocshell.h>
 #include <shellutils.h>
@@ -392,6 +393,12 @@ BOOL CSysTray::ProcessWindowMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
         if (wParam == SPI_SETMOUSEKEYS)
             MouseKeys_Update(this);
         break;
+
+    case MM_MIXM_LINE_CHANGE:
+    {
+        DPRINTF("MM_MIXM_LINE_CHANGE received at window processor: hMixer %lx; dwLineID %lu", wParam, lParam);
+        break;
+    }
 
     case WM_DESTROY:
         KillTimer(POLL_TIMER_ID);

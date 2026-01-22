@@ -14,7 +14,6 @@ HICON g_hIconVolume;
 HICON g_hIconMute;
 
 HMIXER g_hMixer;
-UINT   g_mixerId;
 DWORD  g_mixerLineID;
 DWORD  g_muteControlID;
 
@@ -24,74 +23,35 @@ static BOOL g_IsMute = FALSE;
 
 static HRESULT __stdcall Volume_FindMixerControl(CSysTray * pSysTray)
 {
-    MMRESULT result;
-    UINT mixerId = 0;
-    DWORD waveOutId = 0;
-    DWORD param2 = 0;
+    if (g_hMixer)
+        mixerClose(g_hMixer);
 
-    TRACE("Volume_FindDefaultMixerID\n");
+    WCHAR pszWinMMErrText[MAXERRORLENGTH] = {0};
 
-    result = waveOutMessage((HWAVEOUT)UlongToHandle(WAVE_MAPPER), DRVM_MAPPER_PREFERRED_GET, (DWORD_PTR)&waveOutId, (DWORD_PTR)&param2);
-    if (result)
+    MMRESULT result = mixerOpen(&g_hMixer, 0, (DWORD_PTR)pSysTray->GetHWnd(), 0, MIXER_OBJECTF_HMIXER | CALLBACK_WINDOW);
+    if (result != MMSYSERR_NOERROR)
+    {
+        waveOutGetErrorTextW(result, pszWinMMErrText, _countof(pszWinMMErrText));
+        ERR("Volume_FindDefaultMixer: mixerOpen failed: %lu (%S)\n", result, pszWinMMErrText);
         return E_FAIL;
-
-    if (waveOutId == (DWORD)-1)
-    {
-        TRACE("WARNING: waveOut has no default device, trying with first available device...\n", waveOutId);
-
-        mixerId = 0;
-    }
-    else
-    {
-        TRACE("waveOut default device is %d\n", waveOutId);
-
-        result = mixerGetID((HMIXEROBJ)UlongToHandle(waveOutId), &mixerId, MIXER_OBJECTF_WAVEOUT);
-        if (result)
-            return E_FAIL;
-
-        TRACE("mixerId for waveOut default device is %d\n", mixerId);
     }
 
-    g_mixerId = mixerId;
-    return S_OK;
+    MIXERLINEW mixerLine;
+    mixerLine.cbStruct = sizeof(mixerLine);
+    mixerLine.dwComponentType = MIXERLINE_COMPONENTTYPE_DST_SPEAKERS;
 
-    MIXERCAPS mixerCaps;
-    MIXERLINE mixerLine;
-    MIXERCONTROL mixerControl;
-    MIXERLINECONTROLS mixerLineControls;
-
-    g_mixerLineID = -1;
-    g_muteControlID = -1;
-
-    if (mixerGetDevCapsW(g_mixerId, &mixerCaps, sizeof(mixerCaps)))
-        return E_FAIL;
-
-    if (mixerCaps.cDestinations == 0)
-        return S_FALSE;
-
-    TRACE("mixerCaps.cDestinations %d\n", mixerCaps.cDestinations);
-
-    DWORD idx;
-    for (idx = 0; idx < mixerCaps.cDestinations; idx++)
+    result = mixerGetLineInfoW((HMIXEROBJ)g_hMixer, &mixerLine, MIXER_OBJECTF_HMIXER | MIXER_GETLINEINFOF_COMPONENTTYPE);
+    if (result != MMSYSERR_NOERROR)
     {
-        mixerLine.cbStruct = sizeof(mixerLine);
-        mixerLine.dwDestination = idx;
-        if (!mixerGetLineInfoW((HMIXEROBJ)UlongToHandle(g_mixerId), &mixerLine, 0))
-        {
-            if (mixerLine.dwComponentType >= MIXERLINE_COMPONENTTYPE_DST_SPEAKERS &&
-                mixerLine.dwComponentType <= MIXERLINE_COMPONENTTYPE_DST_HEADPHONES)
-                break;
-            TRACE("Destination %d was not speakers or headphones.\n");
-        }
-    }
-
-    if (idx >= mixerCaps.cDestinations)
+        waveOutGetErrorTextW(result, pszWinMMErrText, _countof(pszWinMMErrText));
+        ERR("Volume_FindDefaultMixer: mixerGetLineInfoW failed: %lu (%S)\n", result, pszWinMMErrText);
         return E_FAIL;
-
-    TRACE("Valid destination %d found.\n");
+    }
 
     g_mixerLineID = mixerLine.dwLineID;
 
+    MIXERLINECONTROLSW mixerLineControls;
+    MIXERCONTROLW mixerControl;
     mixerLineControls.cbStruct = sizeof(mixerLineControls);
     mixerLineControls.dwLineID = mixerLine.dwLineID;
     mixerLineControls.cControls = 1;
@@ -99,10 +59,10 @@ static HRESULT __stdcall Volume_FindMixerControl(CSysTray * pSysTray)
     mixerLineControls.pamxctrl = &mixerControl;
     mixerLineControls.cbmxctrl = sizeof(mixerControl);
 
-    if (mixerGetLineControlsW((HMIXEROBJ)UlongToHandle(g_mixerId), &mixerLineControls, MIXER_GETLINECONTROLSF_ONEBYTYPE))
+    if (mixerGetLineControlsW((HMIXEROBJ)g_hMixer, &mixerLineControls, MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE))
         return E_FAIL;
 
-    TRACE("Found control id %d for mute: %d\n", mixerControl.dwControlID);
+    TRACE("Volume_FindDefaultMixer: Found control id %d for mute\n", mixerControl.dwControlID);
 
     g_muteControlID = mixerControl.dwControlID;
 
@@ -113,21 +73,21 @@ HRESULT Volume_IsMute()
 {
     MIXERCONTROLDETAILS mixerControlDetails;
 
-    if (g_mixerId != (UINT)-1 && g_muteControlID != (DWORD)-1)
+    if (g_hMixer != NULL && g_muteControlID != (DWORD)-1)
     {
-        BOOL detailsResult = 0;
+        MIXERCONTROLDETAILS_BOOLEAN detailsResult;
         mixerControlDetails.cbStruct = sizeof(mixerControlDetails);
         mixerControlDetails.hwndOwner = 0;
         mixerControlDetails.dwControlID = g_muteControlID;
         mixerControlDetails.cChannels = 1;
         mixerControlDetails.paDetails = &detailsResult;
         mixerControlDetails.cbDetails = sizeof(detailsResult);
-        if (mixerGetControlDetailsW((HMIXEROBJ)UlongToHandle(g_mixerId), &mixerControlDetails, 0))
+        if (mixerGetControlDetailsW((HMIXEROBJ)g_hMixer, &mixerControlDetails, MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE))
             return E_FAIL;
 
         TRACE("Obtained mute status %d\n", detailsResult);
 
-        g_IsMute = detailsResult != 0;
+        g_IsMute = detailsResult.fValue == 1;
     }
 
     return S_OK;
@@ -139,14 +99,13 @@ HRESULT STDMETHODCALLTYPE Volume_Init(_In_ CSysTray * pSysTray)
     WCHAR strTooltip[128];
 
     TRACE("Volume_Init\n");
+    g_mmDeviceChange = RegisterWindowMessageW(L"winmm_devicechange");
 
     if (!g_hMixer)
     {
         hr = Volume_FindMixerControl(pSysTray);
         if (FAILED(hr))
             return hr;
-
-        g_mmDeviceChange = RegisterWindowMessageW(L"winmm_devicechange");
     }
 
     g_hIconVolume = LoadIcon(g_hInstance, MAKEINTRESOURCE(IDI_VOLUME));
@@ -329,6 +288,12 @@ HRESULT STDMETHODCALLTYPE Volume_Message(_In_ CSysTray * pSysTray, UINT uMsg, WP
 
                 case WM_MOUSEMOVE:
                     break;
+
+                case MM_MIXM_LINE_CHANGE:
+                {
+                    DPRINTF("MM_MIXM_LINE_CHANGE received: hMixer %lx; dwLineID %lu", wParam, lParam);
+                    break;
+                }
             }
             return S_OK;
 
