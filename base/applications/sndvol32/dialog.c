@@ -544,7 +544,7 @@ EnumConnectionsCallback(
                           {
                               /* update dialog control */
                               DWORD volumePosition, volumeStep, maxVolume, i;
-                              DWORD balancePosition, balanceStep;
+                              DWORD balancePosition = BALANCE_CENTER, balanceStep;
 
                               volumeStep = (Control[Index].Bounds.dwMaximum - Control[Index].Bounds.dwMinimum) / (VOLUME_MAX - VOLUME_MIN);
 
@@ -557,38 +557,19 @@ EnumConnectionsCallback(
 
                               volumePosition = (maxVolume - Control[Index].Bounds.dwMinimum) / volumeStep;
 
-                              if (Line->cChannels == 1)
+                              if (Line->cChannels == 2)
                               {
-                                  balancePosition = BALANCE_CENTER;
-                              }
-                              else if (Line->cChannels == 2)
-                              {
-                                  if (pVolumeDetails[0].dwValue == pVolumeDetails[1].dwValue)
-                                  {
-                                      balancePosition = BALANCE_CENTER;
-                                  }
-                                  else if (pVolumeDetails[0].dwValue == Control[Index].Bounds.dwMinimum)
-                                  {
-                                      balancePosition = BALANCE_RIGHT;
-                                  }
-                                  else if (pVolumeDetails[1].dwValue == Control[Index].Bounds.dwMinimum)
-                                  {
-                                      balancePosition = BALANCE_LEFT;
-                                  }
-                                  else
-                                  {
-                                      balanceStep = (maxVolume - Control[Index].Bounds.dwMinimum) / (BALANCE_STEPS / 2);
+                                  balanceStep = (maxVolume - Control[Index].Bounds.dwMinimum) / (BALANCE_STEPS / 2);
 
-                                      if (pVolumeDetails[0].dwValue < pVolumeDetails[1].dwValue)
-                                      {
-                                          balancePosition = (pVolumeDetails[0].dwValue - Control[Index].Bounds.dwMinimum) / balanceStep;
-                                          balancePosition = BALANCE_RIGHT - balancePosition;
-                                      }
-                                      else if (pVolumeDetails[1].dwValue < pVolumeDetails[0].dwValue)
-                                      {
-                                          balancePosition = (pVolumeDetails[1].dwValue - Control[Index].Bounds.dwMinimum) / balanceStep;
-                                          balancePosition = BALANCE_LEFT + balancePosition;
-                                      }
+                                  if (pVolumeDetails[0].dwValue < pVolumeDetails[1].dwValue)
+                                  {
+                                      balancePosition = (pVolumeDetails[0].dwValue - Control[Index].Bounds.dwMinimum) / balanceStep;
+                                      balancePosition = BALANCE_RIGHT - balancePosition;
+                                  }
+                                  else if (pVolumeDetails[1].dwValue < pVolumeDetails[0].dwValue)
+                                  {
+                                      balancePosition = (pVolumeDetails[1].dwValue - Control[Index].Bounds.dwMinimum) / balanceStep;
+                                      balancePosition = BALANCE_LEFT + balancePosition;
                                   }
                               }
 
