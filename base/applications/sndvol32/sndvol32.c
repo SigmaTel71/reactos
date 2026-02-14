@@ -785,7 +785,7 @@ MixerControlChangeCallback(PSND_MIXER Mixer, DWORD LineID, LPMIXERLINE Line, PVO
                 {
                     /* update dialog control */
                     DWORD volumePosition, volumeStep, maxVolume, i;
-                    DWORD balancePosition = GetDialogLineSliderCurrentPosition(&Preferences, Line, IDC_LINE_SLIDER_HORZ), balanceStep;
+                    DWORD balancePosition = BALANCE_CENTER, balanceStep;
 
                     volumeStep = (Control[Index].Bounds.dwMaximum - Control[Index].Bounds.dwMinimum) / (VOLUME_MAX - VOLUME_MIN);
 
@@ -798,11 +798,7 @@ MixerControlChangeCallback(PSND_MIXER Mixer, DWORD LineID, LPMIXERLINE Line, PVO
 
                     volumePosition = (maxVolume - Control[Index].Bounds.dwMinimum) / volumeStep;
 
-                    if (Line->cChannels == 1)
-                    {
-                        balancePosition = BALANCE_CENTER;
-                    }
-                    else if (Line->cChannels == 2)
+                    if (Line->cChannels == 2)
                     {
                         balanceStep = (maxVolume - Control[Index].Bounds.dwMinimum) / (BALANCE_STEPS / 2);
 
@@ -822,7 +818,8 @@ MixerControlChangeCallback(PSND_MIXER Mixer, DWORD LineID, LPMIXERLINE Line, PVO
                     UpdateDialogLineSliderControl(&Preferences, Line, IDC_LINE_SLIDER_VERT, VOLUME_MAX - volumePosition);
 
                     /* Update the balance control slider */
-                    UpdateDialogLineSliderControl(&Preferences, Line, IDC_LINE_SLIDER_HORZ, balancePosition);
+                    if (pVolumeDetails[0].dwValue != pVolumeDetails[1].dwValue)
+                        UpdateDialogLineSliderControl(&Preferences, Line, IDC_LINE_SLIDER_HORZ, balancePosition);
                 }
             }
             break;
