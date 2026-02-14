@@ -785,7 +785,7 @@ MixerControlChangeCallback(PSND_MIXER Mixer, DWORD LineID, LPMIXERLINE Line, PVO
                 {
                     /* update dialog control */
                     DWORD volumePosition, volumeStep, maxVolume, i;
-                    DWORD balancePosition, balanceStep;
+                    DWORD balancePosition = GetDialogLineSliderCurrentPosition(&Preferences, Line, IDC_LINE_SLIDER_HORZ), balanceStep;
 
                     volumeStep = (Control[Index].Bounds.dwMaximum - Control[Index].Bounds.dwMinimum) / (VOLUME_MAX - VOLUME_MIN);
 
@@ -804,32 +804,17 @@ MixerControlChangeCallback(PSND_MIXER Mixer, DWORD LineID, LPMIXERLINE Line, PVO
                     }
                     else if (Line->cChannels == 2)
                     {
-                        if (pVolumeDetails[0].dwValue == pVolumeDetails[1].dwValue)
-                        {
-                            balancePosition = BALANCE_CENTER;
-                        }
-                        else if (pVolumeDetails[0].dwValue == Control[Index].Bounds.dwMinimum)
-                        {
-                            balancePosition = BALANCE_RIGHT;
-                        }
-                        else if (pVolumeDetails[1].dwValue == Control[Index].Bounds.dwMinimum)
-                        {
-                            balancePosition = BALANCE_LEFT;
-                        }
-                        else
-                        {
-                            balanceStep = (maxVolume - Control[Index].Bounds.dwMinimum) / (BALANCE_STEPS / 2);
+                        balanceStep = (maxVolume - Control[Index].Bounds.dwMinimum) / (BALANCE_STEPS / 2);
 
-                            if (pVolumeDetails[0].dwValue < pVolumeDetails[1].dwValue)
-                            {
-                                balancePosition = (pVolumeDetails[0].dwValue - Control[Index].Bounds.dwMinimum) / balanceStep;
-                                balancePosition = BALANCE_RIGHT - balancePosition;
-                            }
-                            else if (pVolumeDetails[1].dwValue < pVolumeDetails[0].dwValue)
-                            {
-                                balancePosition = (pVolumeDetails[1].dwValue - Control[Index].Bounds.dwMinimum) / balanceStep;
-                                balancePosition = BALANCE_LEFT + balancePosition;
-                            }
+                        if (pVolumeDetails[0].dwValue < pVolumeDetails[1].dwValue)
+                        {
+                            balancePosition = (pVolumeDetails[0].dwValue - Control[Index].Bounds.dwMinimum) / balanceStep;
+                            balancePosition = BALANCE_RIGHT - balancePosition;
+                        }
+                        else if (pVolumeDetails[1].dwValue < pVolumeDetails[0].dwValue)
+                        {
+                            balancePosition = (pVolumeDetails[1].dwValue - Control[Index].Bounds.dwMinimum) / balanceStep;
+                            balancePosition = BALANCE_LEFT + balancePosition;
                         }
                     }
 

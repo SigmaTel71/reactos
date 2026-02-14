@@ -182,6 +182,7 @@ AdvancedDlgProc(
  * dialog.c
  */
 VOID LoadDialogCtrls(PPREFERENCES_CONTEXT PrefContext);
+DWORD GetDialogLineSliderCurrentPosition(PPREFERENCES_CONTEXT PrefContext, LPMIXERLINE Line, DWORD dwDialogID);
 VOID UpdateDialogLineSliderControl(PPREFERENCES_CONTEXT PrefContext, LPMIXERLINE Line, DWORD DialogID, DWORD Position);
 VOID UpdateDialogLineSwitchControl(PPREFERENCES_CONTEXT PrefContext, LPMIXERLINE Line, LONG fValue);
 
