@@ -184,9 +184,11 @@ CWlanWizard::OnScanNetworks(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHan
                 -1,
                 reinterpret_cast<LPARAM>(cswSSID.GetBuffer()));
 
+            LB_ITEMDATA* itemData = new LB_ITEMDATA(dwNetwork, false);
+
             m_ListboxWLAN.SendMessageW(LB_SETITEMDATA,
                 iItemIdx,
-                static_cast<LPARAM>(dwNetwork));
+                reinterpret_cast<LPARAM>(itemData));
         }
     }
 

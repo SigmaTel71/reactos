@@ -327,7 +327,7 @@ CWlanWizard::OnListBox(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
         m_ListboxWLAN.SendMessageW(LB_SETITEMHEIGHT, dwItemID, 136);
         
         m_dwSelectedItemID = static_cast<DWORD>(dwItemID);
-        LRESULT itemRealID = m_ListboxWLAN.SendMessageW(LB_GETITEMDATA, dwItemID);
+        LB_ITEMDATA* plbItemData = reinterpret_cast<LB_ITEMDATA*>(m_ListboxWLAN.SendMessageW(LB_GETITEMDATA, dwItemID));
         
         m_ListboxWLAN.Invalidate(FALSE);
         m_ListboxWLAN.UpdateWindow();
@@ -343,7 +343,7 @@ CWlanWizard::OnListBox(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
         DrawFocusRect(dcLB, &rcItem);
 
         DWORD dwConnectBtnStringID = IDS_WLANWIZ_CONNECT;
-        if (m_lstWlanNetworks->Network[itemRealID].dwFlags & WLAN_AVAILABLE_NETWORK_CONNECTED)
+        if (m_lstWlanNetworks->Network[plbItemData->dwRealItemID].dwFlags & WLAN_AVAILABLE_NETWORK_CONNECTED)
             dwConnectBtnStringID = IDS_WLANWIZ_DISCONNECT;
 
         ATL::CStringW cswConnectButtonText((LPCWSTR)dwConnectBtnStringID);

@@ -11,9 +11,9 @@ LRESULT
 CWlanWizard::OnMainButton(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
 {
     int lbSelection = m_ListboxWLAN.SendMessageW(LB_GETCURSEL);
-    DWORD wlanIdx = m_ListboxWLAN.SendMessageW(LB_GETITEMDATA, lbSelection);
+    LB_ITEMDATA* plbItemData = reinterpret_cast<LB_ITEMDATA*>(m_ListboxWLAN.SendMessageW(LB_GETITEMDATA, lbSelection));
 
-    const PWLAN_AVAILABLE_NETWORK item = &m_lstWlanNetworks->Network[wlanIdx];
+    const PWLAN_AVAILABLE_NETWORK item = &m_lstWlanNetworks->Network[plbItemData->dwRealItemID];
     GUID interfaceGUID;
     IIDFromString(m_sGUID, &interfaceGUID);
 

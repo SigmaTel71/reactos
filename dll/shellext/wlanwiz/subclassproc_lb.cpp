@@ -56,26 +56,66 @@ CWlanWizard::OnPaintLB(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 }
 
 LRESULT
+CWlanWizard::OnMouseMoveLB(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+{
+    if (!m_lstWlanNetworks->dwNumberOfItems || !IsThemeActive())
+    {
+        bHandled = TRUE;
+        return 0;
+    }
+
+    RECT rcCurrentItem;
+    DWORD dwItemID = m_ListboxWLAN.SendMessageW(LB_GETCURSEL);
+
+    if (dwItemID == LB_ERR)
+    {
+        bHandled = TRUE;
+        return 0;
+    }
+
+    m_ListboxWLAN.SendMessageW(LB_GETITEMRECT, dwItemID, (LPARAM)&rcCurrentItem);
+
+    POINT ps;
+    GetCursorPos(&ps);
+    m_ListboxWLAN.ScreenToClient(&ps);
+
+    LONG itemHeight = rcCurrentItem.bottom - rcCurrentItem.top;
+
+    if (itemHeight == 56)
+    {
+        bHandled = TRUE;
+        return 0;
+    }
+
+    bool bLastHot = m_lastCBS == CBS_UNCHECKEDHOT || m_lastCBS == CBS_CHECKEDHOT;
+    bool bLastNormal = m_lastCBS == CBS_CHECKEDNORMAL || m_lastCBS == CBS_UNCHECKEDNORMAL;
+
+    m_bMouseOverAutoconnect = (ps.x >= m_rcCbCollision.left && ps.x <= m_rcCbCollision.right) &&
+                              (ps.y >= m_rcCbCollision.top && ps.y <= m_rcCbCollision.bottom);
+
+    if (!m_bMouseOverAutoconnect && bLastHot || m_bMouseOverAutoconnect && bLastNormal)
+        m_ListboxWLAN.InvalidateRect(&m_rcCheckbox, FALSE);
+
+    bHandled = TRUE;
+    return 0;
+}
+
+LRESULT
 CWlanWizard::OnLButtonDownLB(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    int x = GET_X_LPARAM(lParam);
-    int y = GET_Y_LPARAM(lParam);
+    DWORD dwItemID = m_ListboxWLAN.SendMessageW(LB_GETCURSEL);
 
-    bool bClickedOutside;
-    int idx = (int)m_ListboxWLAN.SendMessageW(LB_ITEMFROMPOINT, 0, lParam);
-
-    if (idx >= 0)
+    if (dwItemID == LB_ERR)
     {
-        RECT rcItem;
-
-        LRESULT res = m_ListboxWLAN.SendMessageW(LB_GETITEMRECT, idx, (LPARAM)&rcItem);
-        if (res == LB_ERR || rcItem.bottom - rcItem.top == 56)
-            goto pass;
-
-        /* Calculate the collision box for emulated checkbox. */
-        AutoconnectCheckboxCollision(&rcItem);
+        bHandled = FALSE;
+        return 0;
     }
-pass:
+
+    LB_ITEMDATA *plbItemData = reinterpret_cast<LB_ITEMDATA*>(m_ListboxWLAN.SendMessageW(LB_GETITEMDATA, dwItemID));
+
+    if (m_bMouseOverAutoconnect)
+        plbItemData->bShouldAutoconnect = !plbItemData->bShouldAutoconnect;
+
     bHandled = FALSE;
     return 0;
 }

@@ -19,9 +19,9 @@ CWlanWizard::OnListboxDrawItem(_In_ UINT parentID, _In_ PDRAWITEMSTRUCT pdis)
     SetBkMode(pdis->hDC, TRANSPARENT);
 
     UINT uSSIDLength = static_cast<UINT>(SendDlgItemMessageW(pdis->CtlID, LB_GETTEXTLEN, pdis->itemID, NULL));
-    DWORD uItemRealID = static_cast<DWORD>(SendDlgItemMessageW(pdis->CtlID, LB_GETITEMDATA, pdis->itemID, NULL));
+    LB_ITEMDATA* plbItemData = reinterpret_cast<LB_ITEMDATA*>(SendDlgItemMessageW(pdis->CtlID, LB_GETITEMDATA, pdis->itemID, NULL));
 
-    PWLAN_AVAILABLE_NETWORK pWlanNetwork = &m_lstWlanNetworks->Network[uItemRealID];
+    PWLAN_AVAILABLE_NETWORK pWlanNetwork = &m_lstWlanNetworks->Network[plbItemData->dwRealItemID];
 
     /* Step 1: draw listbox item's graphics, starting with the background */
     if (!(pdis->itemState & ODS_SELECTED))
@@ -292,7 +292,7 @@ CWlanWizard::OnListboxDrawItem(_In_ UINT parentID, _In_ PDRAWITEMSTRUCT pdis)
                 .bottom = rcCheckbox.top + sCheckbox.cy
             };
 
-            RECT rcCheckboxText = rcCheckbox;
+            RECT rcCheckboxText = m_rcCheckbox = rcCheckbox;
             rcCheckboxText.left += sCheckbox.cx + 4;
 
             ATL::CStringW szAutoconn((LPCWSTR)IDS_WLANWIZ_EXPAND_AUTOCONNECT);
@@ -306,17 +306,29 @@ CWlanWizard::OnListboxDrawItem(_In_ UINT parentID, _In_ PDRAWITEMSTRUCT pdis)
                         &rcCheckboxText,
                         DT_LEFT | DT_VCENTER);
 
+            m_rcCbCollision = rcCheckboxText;
+            m_rcCbCollision.left -= sCheckbox.cx;
+
             if (m_hThemeButton)
             {
-                CHECKBOXSTATES cbs = !hasProfile || preferAutoConnect ? CBS_CHECKEDNORMAL : CBS_UNCHECKEDNORMAL;
+                POINT ps;
+                GetCursorPos(&ps);
+                m_ListboxWLAN.ScreenToClient(&ps);
+
+                m_bMouseOverAutoconnect = (ps.x >= m_rcCbCollision.left && ps.x <= m_rcCbCollision.right) &&
+                                          (ps.y >= m_rcCbCollision.top && ps.y <= m_rcCbCollision.bottom);
+
+                m_lastCBS = !hasProfile || preferAutoConnect || plbItemData->bShouldAutoconnect
+                    ? m_bMouseOverAutoconnect ? CBS_CHECKEDHOT   : CBS_CHECKEDNORMAL
+                    : m_bMouseOverAutoconnect ? CBS_UNCHECKEDHOT : CBS_UNCHECKEDNORMAL;
 
                 DrawThemeBackground(m_hThemeButton,
                                     pdis->hDC,
-                                    BP_CHECKBOX, cbs, &rcCheckbox, NULL);
+                                    BP_CHECKBOX, m_lastCBS, &rcCheckbox, NULL);
             }
             else
             {
-                UINT uState = !hasProfile || preferAutoConnect ? DFCS_CHECKED : 0;
+                UINT uState = !hasProfile || preferAutoConnect || plbItemData->bShouldAutoconnect ? DFCS_CHECKED : 0;
                 DrawFrameControl(pdis->hDC, &rcCheckbox, DFC_BUTTON, DFCS_BUTTONCHECK | uState);
             }
         }

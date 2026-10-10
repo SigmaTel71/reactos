@@ -42,6 +42,12 @@ enum WLAN_SCAN_STATES
     STATUS_SCANNING,
 };
 
+struct LB_ITEMDATA
+{
+    DWORD dwRealItemID;
+    bool bShouldAutoconnect;
+};
+
 static struct ExplorerInstance : public IUnknown
 {
     HWND m_hWnd;
@@ -130,6 +136,7 @@ public:
     ALT_MSG_MAP(2)
         MESSAGE_HANDLER(WM_GETDLGCODE, OnGetDlgCodeLB);
         MESSAGE_HANDLER(WM_PAINT, OnPaintLB);
+        MESSAGE_HANDLER(WM_MOUSEMOVE, OnMouseMoveLB);
         MESSAGE_HANDLER(WM_LBUTTONDOWN, OnLButtonDownLB);
 
     ALT_MSG_MAP(3)
@@ -150,6 +157,7 @@ public:
 private:
     BOOL m_bScanTimeout = TRUE;
     BOOL m_bMouseOverButtons = FALSE;
+    BOOL m_bMouseOverAutoconnect = FALSE;
     DWORD m_dwNegotiatedVersion = 0;
     HANDLE m_hProcessHeap = GetProcessHeap();
     HANDLE m_hWlanClient = INVALID_HANDLE_VALUE;
@@ -171,6 +179,9 @@ private:
 
     /* Listbox specific variables */
     DWORD m_dwSelectedItemID = 0;
+    RECT m_rcCheckbox;
+    RECT m_rcCbCollision;
+    CHECKBOXSTATES m_lastCBS = CBS_UNCHECKEDNORMAL;
 
     LRESULT OnInitDialog(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnDrawItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
@@ -198,6 +209,7 @@ private:
     LRESULT OnGetDlgCodeLB(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnVKeyToItem(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnPaintLB(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnMouseMoveLB(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnLButtonDownLB(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 
     /* ALT_MSG_MAP 4 */
