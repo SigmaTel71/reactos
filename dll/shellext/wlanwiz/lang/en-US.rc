@@ -44,6 +44,7 @@ BEGIN
     IDS_WLANWIZ_NO_APS_DISCOVERED   "No wireless networks were found in range\n\nMake sure the wireless switch on your computer is on.\nTo retry scanning, click 'Refresh network list.'"
     IDS_WLANWIZ_SCANNING_NETWORKS   "Searching for wireless networks in range..."
     IDS_WLANWIZ_HIDDEN_NETWORK      "Hidden network"
+    IDS_WLANWIZ_AIRED_FREQUENCY     "%1 GHz"
 
     IDS_WLANWIZ_EXPAND_UNENCRYPTED        "This network is configured for open access and information sent over may be visible to others. If you want to connect to this network, click Connect."
     IDS_WLANWIZ_EXPAND_ENCRYPTED          "To connect to this network, click Connect and follow further instructions."

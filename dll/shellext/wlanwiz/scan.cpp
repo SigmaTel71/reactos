@@ -226,6 +226,7 @@ WINAPI CWlanWizard::ScanNetworksThread(_In_ LPVOID lpParameter)
 
     WlanScan(cwwThis->m_hWlanClient, &gWlanDeviceID, NULL, NULL, NULL);
     WlanGetAvailableNetworkList(cwwThis->m_hWlanClient, &gWlanDeviceID, 0, NULL, &cwwThis->m_lstWlanNetworks);
+    WlanGetNetworkBssList(cwwThis->m_hWlanClient, &gWlanDeviceID, NULL, dot11_BSS_type_any, FALSE, NULL, &cwwThis->m_lstBSS);
 
     return FALSE;
 }
