@@ -131,6 +131,9 @@ CWlanWizard::FindWlanDevice(ATL::CString sGUID)
 
         return bWlanDevicePresent;
     }
+
+    /* Subscribe to 'scan ended' notification */
+    dwResult = WlanRegisterNotification(m_hWlanClient, WLAN_NOTIFICATION_SOURCE_ACM, TRUE, , nullptr, nullptr, nullptr);
 }
 
 LRESULT

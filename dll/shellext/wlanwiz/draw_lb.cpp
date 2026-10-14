@@ -108,6 +108,33 @@ CWlanWizard::OnListboxDrawItem(_In_ PDRAWITEMSTRUCT pdis)
 
     DrawIconEx(pdis->hDC, pdis->rcItem.left + 2, pdis->rcItem.top + 3, m_MListboxIcons.Lookup(dwBSSIconID), 48, 48, NULL, NULL, DI_NORMAL);
 
+    /* Aired frequency */
+    PWLAN_BSS_ENTRY pBssEntry = &m_lstBSS->wlanBssEntries[plbItemData->dwRealItemID];
+    LPCWSTR cswFreq = NULL;
+
+    if (pBssEntry->ulChCenterFrequency >= 2412000 && pBssEntry->ulChCenterFrequency <= 2482000)
+        cswFreq = L"2.4";
+    else if (pBssEntry->ulChCenterFrequency >= 5160000 && pBssEntry->ulChCenterFrequency <= 5885000)
+        cswFreq = L"5";
+    else if (pBssEntry->ulChCenterFrequency >= 5935000 && pBssEntry->ulChCenterFrequency <= 7115000)
+        cswFreq = L"6";
+
+    if (cswFreq != NULL)
+    {
+        RECT rcFreqText =
+        {
+            .left = pdis->rcItem.left + 2,
+            .top = pdis->rcItem.top + 3 + 48 + 4, /* top margin, icon, text margin */
+            .right = rcFreqText.left + 2 + 48,    /* left margin, icon */
+            .bottom = rcFreqText.top + 24
+        };
+        ATL::CStringW cswFreqText;
+        cswFreqText.FormatMessageW(IDS_WLANWIZ_AIRED_FREQUENCY, cswFreq);
+
+        DrawTextW(pdis->hDC, cswFreqText, cswFreqText.GetAllocLength(), &rcFreqText, DT_CALCRECT | DT_CENTER);
+        DrawTextW(pdis->hDC, cswFreqText, cswFreqText.GetAllocLength(), &rcFreqText, DT_CENTER);
+    }
+
     /* Authentication standard strength */
     if (pWlanNetwork->bSecurityEnabled)
     {

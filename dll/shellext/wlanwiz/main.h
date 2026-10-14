@@ -171,6 +171,7 @@ private:
     LPOLESTR m_sGUID = NULL;
     PWLAN_INTERFACE_INFO_LIST m_lstWlanInterfaces = NULL;
     PWLAN_AVAILABLE_NETWORK_LIST m_lstWlanNetworks = NULL;
+    PWLAN_BSS_LIST m_lstBSS = NULL;
     UINT m_uScanStatus = STATUS_SCAN_COMPLETE;
     
     /* Sidebar button specific variables */
@@ -232,6 +233,7 @@ private:
     void PreloadDrawableItems();
     void UnloadDrawableItems();
     void InitPasswordField();
+    void CALLBACK WlanNotificationCallback(PWLAN_NOTIFICATION_DATA pData, PVOID ctx);
     const bool PreferAutoConnection(_In_ PWLAN_AVAILABLE_NETWORK wlanNetwork);
     DWORD TryFindConnected(_In_ DWORD dwIndex);
 

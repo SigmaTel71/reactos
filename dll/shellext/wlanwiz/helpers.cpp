@@ -99,6 +99,25 @@ void CWlanWizard::InitPasswordField()
     m_PasswordWnd.SetFont((HFONT)GetStockObject(DEFAULT_GUI_FONT));
 }
 
+void
+CALLBACK
+CWlanWizard::WlanNotificationCallback(PWLAN_NOTIFICATION_DATA pData, PVOID ctx)
+{
+    if (!pData)
+        return;
+
+    switch (pData->NotificationSource)
+    {
+        case WLAN_NOTIFICATION_SOURCE_ACM:
+        {
+            WARN("hello?\n");
+            return;
+        }
+        default:
+            return;
+    }
+}
+
 const bool CWlanWizard::PreferAutoConnection(_In_ PWLAN_AVAILABLE_NETWORK pWlanNetwork)
 {
     GUID interfaceGuid;
